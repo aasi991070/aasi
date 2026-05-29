@@ -4,6 +4,7 @@ import { Bell, Menu, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { BRAND_NAME } from "@/constants";
 import { useUiStore } from "@/hooks/useUiStore";
 import { cn } from "@/lib/utils/cn";
 
@@ -30,7 +31,7 @@ function getBreadcrumb(pathname: string): string {
 }
 
 export function V18TopNav({
-  brandLabel = "Aasi",
+  brandLabel = BRAND_NAME,
   brandHref = "/",
   showAdminLink = true,
 }: V18TopNavProps) {

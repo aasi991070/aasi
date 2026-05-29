@@ -12,6 +12,10 @@ import {
 
 export const STORAGE_BUCKET = "product-images";
 
+export const BRAND_NAME = "Aasi";
+export const BRAND_ADMIN_NAME = "Aasi CMS";
+export const BRAND_TAGLINE = "Luxury Clothing";
+
 export const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL"] as const;
 
 export const GENDERS = [

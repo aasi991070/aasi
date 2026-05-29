@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/admin/PageHeader";
-import { REVALIDATE_SECONDS } from "@/constants";
+import { BRAND_NAME, BRAND_TAGLINE, REVALIDATE_SECONDS } from "@/constants";
 
 export default function AdminSettingsPage() {
   return (
@@ -13,7 +13,7 @@ export default function AdminSettingsPage() {
       <div className="max-w-2xl v18-card p-6">
         <h2 className="text-lg font-semibold v18-text-heading">Store</h2>
         <p className="mt-2 text-sm v18-text-muted">
-          Aasi — Luxury Clothing Store
+          {BRAND_NAME} — {BRAND_TAGLINE} Store
         </p>
 
         <h2 className="mt-8 text-lg font-semibold v18-text-heading">

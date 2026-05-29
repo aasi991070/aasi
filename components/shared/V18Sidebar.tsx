@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { NavItem } from "@/constants";
+import { BRAND_NAME } from "@/constants";
 import { useUiStore } from "@/hooks/useUiStore";
 import { cn } from "@/lib/utils/cn";
 
@@ -14,7 +15,7 @@ interface V18SidebarProps {
 
 export function V18Sidebar({
   navItems,
-  brandLabel = "Aasi",
+  brandLabel = BRAND_NAME,
   brandHref = "/",
 }: V18SidebarProps) {
   const pathname = usePathname();

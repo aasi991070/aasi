@@ -2,6 +2,8 @@
 
 import {
   ADMIN_NAV_ITEMS,
+  BRAND_ADMIN_NAME,
+  BRAND_NAME,
   STOREFRONT_NAV_ITEMS,
   type NavItem,
 } from "@/constants";
@@ -30,7 +32,7 @@ export function V18Shell({
     variant === "admin" ? ADMIN_NAV_ITEMS : STOREFRONT_NAV_ITEMS;
 
   const resolvedBrandLabel =
-    brandLabel ?? (variant === "admin" ? "Aasi CMS" : "Aasi");
+    brandLabel ?? (variant === "admin" ? BRAND_ADMIN_NAME : BRAND_NAME);
   const resolvedBrandHref =
     brandHref ?? (variant === "admin" ? "/admin/dashboard" : "/");
   const resolvedShowAdminLink =

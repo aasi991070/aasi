@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { GeistSans } from "geist/font/sans";
+import { BRAND_NAME, BRAND_TAGLINE } from "@/constants";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -13,10 +14,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Aasi — Luxury Clothing",
-    template: "%s | Aasi",
+    default: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
+    template: `%s | ${BRAND_NAME}`,
   },
-  description: "Luxury clothing for the modern wardrobe.",
+  description: `${BRAND_TAGLINE} for the modern wardrobe.`,
 };
 
 export default function RootLayout({
