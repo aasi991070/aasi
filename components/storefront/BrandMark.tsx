@@ -14,11 +14,11 @@ export function BrandMark({ asLink = true, className }: BrandMarkProps) {
 
   if (asLink) {
     return (
-      <Link href="/" className={classes} aria-label="Aasii home">
-        Aasii
+      <Link href="/" className={classes} aria-label="Aasi home">
+        Aasi
       </Link>
     );
   }
 
-  return <span className={classes}>Aasii</span>;
+  return <span className={classes}>Aasi</span>;
 }

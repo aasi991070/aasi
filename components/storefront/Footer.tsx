@@ -60,7 +60,7 @@ export function Footer() {
       </div>
       <div className="border-t border-store-border px-6 py-6 lg:px-8">
         <p className="text-center font-sans text-xs text-store-ink-muted">
-          © {new Date().getFullYear()} Aasii. All rights reserved.
+          © {new Date().getFullYear()} Aasi. All rights reserved.
         </p>
       </div>
     </footer>

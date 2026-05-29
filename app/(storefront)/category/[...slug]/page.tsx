@@ -53,7 +53,7 @@ export async function generateMetadata({
   if (!category) return { title: "Category Not Found" };
   return {
     title: category.name,
-    description: category.description ?? `Shop ${category.name} at Atelier`,
+    description: category.description ?? `Shop ${category.name} at Aasi`,
   };
 }
 

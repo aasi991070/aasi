@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-slate-800 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold text-slate-900">Atelier CMS</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">Aasi CMS</h1>
           <p className="mt-2 text-sm text-slate-500">Sign in to manage your store</p>
         </div>
 

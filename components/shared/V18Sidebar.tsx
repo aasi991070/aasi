@@ -14,7 +14,7 @@ interface V18SidebarProps {
 
 export function V18Sidebar({
   navItems,
-  brandLabel = "Atelier",
+  brandLabel = "Aasi",
   brandHref = "/",
 }: V18SidebarProps) {
   const pathname = usePathname();

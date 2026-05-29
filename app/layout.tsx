@@ -13,8 +13,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Atelier — Luxury Clothing",
-    template: "%s | Atelier",
+    default: "Aasi — Luxury Clothing",
+    template: "%s | Aasi",
   },
   description: "Luxury clothing for the modern wardrobe.",
 };

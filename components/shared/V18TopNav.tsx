@@ -30,7 +30,7 @@ function getBreadcrumb(pathname: string): string {
 }
 
 export function V18TopNav({
-  brandLabel = "Atelier",
+  brandLabel = "Aasi",
   brandHref = "/",
   showAdminLink = true,
 }: V18TopNavProps) {

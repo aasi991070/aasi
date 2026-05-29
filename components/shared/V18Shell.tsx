@@ -30,7 +30,7 @@ export function V18Shell({
     variant === "admin" ? ADMIN_NAV_ITEMS : STOREFRONT_NAV_ITEMS;
 
   const resolvedBrandLabel =
-    brandLabel ?? (variant === "admin" ? "Atelier CMS" : "Atelier");
+    brandLabel ?? (variant === "admin" ? "Aasi CMS" : "Aasi");
   const resolvedBrandHref =
     brandHref ?? (variant === "admin" ? "/admin/dashboard" : "/");
   const resolvedShowAdminLink =

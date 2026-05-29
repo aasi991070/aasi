@@ -120,7 +120,7 @@ export function ProductDetailClient({
 export function buildProductMetadata(product: Product): Metadata {
   return {
     title: product.name,
-    description: product.description ?? `${product.name} — Atelier`,
+    description: product.description ?? `${product.name} — Aasi`,
     openGraph: {
       title: product.name,
       description: product.description,
