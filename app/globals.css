@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+@theme {
+  /* v18 GovCon design system */
+  --color-v18-primary: #1e40af;
+  --color-v18-primary-mid: #3b82f6;
+  --color-v18-primary-hover: #1d4ed8;
+  --color-v18-sidebar-from: #1e3a8a;
+  --color-v18-sidebar-to: #1e40af;
+  --color-v18-bg-from: #1e3a8a;
+  --color-v18-bg-mid: #3b82f6;
+  --color-v18-bg-to: #f0f9ff;
+  --color-v18-heading: #1e293b;
+  --color-v18-muted: #64748b;
+  --color-v18-muted-dark: #475569;
+  --color-v18-border: #e2e8f0;
+  --color-v18-success: #16a34a;
+  --color-v18-warning: #e85d04;
+  --color-v18-danger: #dc2626;
+  --color-v18-avatar-from: #f7941d;
+  --color-v18-avatar-to: #ffd100;
+  --color-v18-white: #ffffff;
+
+  --radius-v18-card: 20px;
+  --radius-v18-btn: 10px;
+  --radius-v18-stat: 16px;
+  --radius-v18-input: 8px;
+
+  --shadow-v18-card: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --shadow-v18-stat: 0 2px 12px rgba(0, 0, 0, 0.06);
+
+  /* shadcn semantic tokens — mapped to v18 */
+  --color-background: #ffffff;
+  --color-foreground: #1e293b;
+  --color-card: #ffffff;
+  --color-card-foreground: #1e293b;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1e293b;
+  --color-primary: #1e40af;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #1e293b;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-accent: #f1f5f9;
+  --color-accent-foreground: #1e293b;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: #1e40af;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-sans {
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+
+  .font-geist {
+    font-family: var(--font-geist-sans), var(--font-sans), system-ui, sans-serif;
+  }
+
+  /* v18 layout chrome */
+  .v18-body-gradient {
+    background: linear-gradient(
+      135deg,
+      var(--color-v18-bg-from) 0%,
+      var(--color-v18-bg-mid) 45%,
+      var(--color-v18-bg-to) 100%
+    );
+  }
+
+  .v18-sidebar {
+    background: linear-gradient(
+      180deg,
+      var(--color-v18-sidebar-from),
+      var(--color-v18-sidebar-to)
+    );
+  }
+
+  /* v18 surfaces */
+  .v18-card {
+    border-radius: var(--radius-v18-card);
+    background: var(--color-v18-white);
+    box-shadow: var(--shadow-v18-card);
+    color: var(--color-v18-heading);
+  }
+
+  .v18-stat-card {
+    border-radius: var(--radius-v18-stat);
+    background: var(--color-v18-white);
+    box-shadow: var(--shadow-v18-stat);
+    color: var(--color-v18-heading);
+    transition: transform 0.2s ease-out;
+  }
+
+  .v18-stat-card:hover {
+    transform: translateY(-4px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .v18-stat-card:hover {
+      transform: none;
+    }
+  }
+
+  /* v18 actions */
+  .v18-btn-primary {
+    min-height: 44px;
+    border-radius: var(--radius-v18-btn);
+    background: linear-gradient(
+      135deg,
+      var(--color-v18-primary),
+      var(--color-v18-primary-mid)
+    );
+    color: var(--color-v18-white);
+  }
+
+  .v18-btn-primary:hover {
+    background: linear-gradient(
+      135deg,
+      var(--color-v18-primary-hover),
+      var(--color-v18-primary-mid)
+    );
+  }
+
+  .v18-avatar {
+    background: linear-gradient(
+      135deg,
+      var(--color-v18-avatar-from),
+      var(--color-v18-avatar-to)
+    );
+  }
+
+  /* Text on gradient vs on white cards */
+  .v18-text-on-gradient {
+    color: var(--color-v18-white);
+  }
+
+  .v18-text-muted-on-gradient {
+    color: rgb(255 255 255 / 0.7);
+  }
+
+  .v18-text-heading {
+    color: var(--color-v18-heading);
+  }
+
+  .v18-text-muted {
+    color: var(--color-v18-muted);
+  }
+}

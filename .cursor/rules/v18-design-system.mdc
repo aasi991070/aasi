@@ -1,0 +1,49 @@
+---
+description: v18 GovCon design system — blue chrome, white content cards
+globs: app/**/*.tsx, components/**/*.tsx, app/globals.css
+alwaysApply: false
+---
+
+# v18 Design System
+
+## Mental model
+
+**Blue chrome, white content.** The shell (sidebar, gradient background, page headers) is blue with white text. All readable/interactive content sits on white cards with dark text.
+
+## Color tokens (globals.css @theme)
+
+| Role | Token |
+|------|-------|
+| Primary blue | `--color-v18-primary` / `--color-v18-primary-mid` |
+| Sidebar | `--color-v18-sidebar-from` → `--color-v18-sidebar-to` |
+| Body gradient | `--color-v18-bg-from` → `--color-v18-bg-mid` → `--color-v18-bg-to` |
+| Headings on white | `--color-v18-heading` (#1e293b) |
+| Muted text | `--color-v18-muted` (#64748b) |
+| Borders | `--color-v18-border` |
+| Avatar accent | `--color-v18-avatar-from` / `--color-v18-avatar-to` |
+
+## Utility classes
+
+- `.v18-body-gradient` — main area background
+- `.v18-sidebar` — left nav chrome
+- `.v18-card` — white content surface (20px radius)
+- `.v18-stat-card` — KPI tiles (16px radius)
+- `.v18-btn-primary` — blue gradient button (44px min height)
+- `.v18-text-on-gradient` / `.v18-text-muted-on-gradient` — titles on blue bg
+
+## Layout shell
+
+Use `V18Shell` + `V18Sidebar` + `V18TopNav` from `components/shared/` for both storefront and admin CMS routes.
+
+## Do
+
+- Use `PageHeader` with `variant="onGradient"` for page titles on the gradient
+- Put forms, tables, product grids inside `.v18-card`
+- Use shadcn `Button` default variant (maps to v18 primary gradient)
+- Keep auth pages (`/admin/login`) on separate styling
+
+## Don't
+
+- Put dark headings directly on the gradient (except PageHeader)
+- Use luxury storefront gold/off-white tokens on CMS or store pages
+- Mix admin-only naming (`admin-*`) — use `v18-*` tokens/classes
