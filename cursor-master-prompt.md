@@ -1,7 +1,5 @@
 # Cursor Master Prompt — Clothing Store (Next.js + Supabase + Vercel)
 
-Paste this entire prompt into Cursor at the start of your project.
-
 ---
 
 ## Project Overview
