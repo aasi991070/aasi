@@ -48,11 +48,14 @@ export default async function AdminSettingsPage() {
             Configure Supabase credentials in{" "}
             <code className="rounded bg-slate-100 px-1">.env.local</code>. Set{" "}
             <code className="rounded bg-slate-100 px-1">REVALIDATE_SECRET</code> for
-            secure cache invalidation. Run{" "}
+            secure cache invalidation and{" "}
+            <code className="rounded bg-slate-100 px-1">SUPABASE_SERVICE_ROLE_KEY</code>{" "}
+            on Vercel so admin settings can persist. Optionally run{" "}
             <code className="rounded bg-slate-100 px-1">
               supabase/migrations/001_site_settings.sql
             </code>{" "}
-            in Supabase to enable the monochrome toggle.
+            for database-backed settings (otherwise settings are stored in Supabase
+            Storage automatically).
           </p>
         </div>
       </div>

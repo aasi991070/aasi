@@ -2,8 +2,6 @@
 
 import {
   ADMIN_NAV_ITEMS,
-  BRAND_ADMIN_NAME,
-  BRAND_NAME,
   STOREFRONT_NAV_ITEMS,
   type NavItem,
 } from "@/constants";
@@ -15,7 +13,6 @@ import { cn } from "@/lib/utils/cn";
 interface V18ShellProps {
   children: React.ReactNode;
   variant: "storefront" | "admin";
-  brandLabel?: string;
   brandHref?: string;
   showAdminLink?: boolean;
 }
@@ -23,7 +20,6 @@ interface V18ShellProps {
 export function V18Shell({
   children,
   variant,
-  brandLabel,
   brandHref,
   showAdminLink,
 }: V18ShellProps) {
@@ -31,8 +27,6 @@ export function V18Shell({
   const navItems: NavItem[] =
     variant === "admin" ? ADMIN_NAV_ITEMS : STOREFRONT_NAV_ITEMS;
 
-  const resolvedBrandLabel =
-    brandLabel ?? (variant === "admin" ? BRAND_ADMIN_NAME : BRAND_NAME);
   const resolvedBrandHref =
     brandHref ?? (variant === "admin" ? "/admin/dashboard" : "/");
   const resolvedShowAdminLink =
@@ -40,11 +34,7 @@ export function V18Shell({
 
   return (
     <div className="v18-body-gradient min-h-screen">
-      <V18Sidebar
-        navItems={navItems}
-        brandLabel={resolvedBrandLabel}
-        brandHref={resolvedBrandHref}
-      />
+      <V18Sidebar navItems={navItems} brandHref={resolvedBrandHref} />
       <div
         className={cn(
           "min-h-screen transition-all duration-200 ease-in-out",
@@ -52,7 +42,6 @@ export function V18Shell({
         )}
       >
         <V18TopNav
-          brandLabel={resolvedBrandLabel}
           brandHref={resolvedBrandHref}
           showAdminLink={resolvedShowAdminLink}
         />

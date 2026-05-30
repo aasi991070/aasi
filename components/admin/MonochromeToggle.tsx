@@ -30,9 +30,14 @@ export function MonochromeToggle({ initialEnabled }: MonochromeToggleProps) {
         "success"
       );
       router.refresh();
-    } catch {
+    } catch (error) {
       setMonochrome(previous);
-      showToast("Failed to update monochrome setting", "error");
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "Failed to update monochrome setting",
+        "error"
+      );
     }
   };
 

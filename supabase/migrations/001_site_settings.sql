@@ -13,12 +13,23 @@ on conflict (id) do nothing;
 
 alter table site_settings enable row level security;
 
+drop policy if exists "Public read" on site_settings;
+drop policy if exists "Authenticated update" on site_settings;
+drop policy if exists "Authenticated insert" on site_settings;
+drop policy if exists "Authenticated write" on site_settings;
+
 create policy "Public read"
   on site_settings
   for select
   using (true);
 
+create policy "Authenticated insert"
+  on site_settings
+  for insert
+  with check (auth.role() = 'authenticated');
+
 create policy "Authenticated update"
   on site_settings
   for update
-  using (auth.role() = 'authenticated');
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');

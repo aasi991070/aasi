@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { GeistSans } from "geist/font/sans";
-import { BRAND_NAME, BRAND_TAGLINE } from "@/constants";
+import { BRAND_NAME, BRAND_TAGLINE, BRAND_LOGO_PATH } from "@/constants";
 import { getSiteSettings } from "@/lib/queries/settings";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -19,6 +19,11 @@ export const metadata: Metadata = {
     template: `%s | ${BRAND_NAME}`,
   },
   description: `${BRAND_TAGLINE} for the modern wardrobe.`,
+  icons: {
+    icon: BRAND_LOGO_PATH,
+    shortcut: BRAND_LOGO_PATH,
+    apple: BRAND_LOGO_PATH,
+  },
 };
 
 export default async function RootLayout({

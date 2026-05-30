@@ -4,6 +4,7 @@ import { BRAND_ADMIN_NAME } from "@/constants";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,9 +40,10 @@ export default function AdminLoginPage() {
   return (
     <div className="v18-login-bg flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold text-slate-900">{BRAND_ADMIN_NAME}</h1>
-          <p className="mt-2 text-sm text-slate-500">Sign in to manage your store</p>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <BrandLogo href="/" priority className="mb-4" />
+          <h1 className="sr-only">{BRAND_ADMIN_NAME}</h1>
+          <p className="text-sm text-slate-500">Sign in to manage your store</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">

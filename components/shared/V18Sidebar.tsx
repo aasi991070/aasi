@@ -3,19 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { NavItem } from "@/constants";
-import { BRAND_NAME } from "@/constants";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 import { useUiStore } from "@/hooks/useUiStore";
 import { cn } from "@/lib/utils/cn";
 
 interface V18SidebarProps {
   navItems: NavItem[];
-  brandLabel?: string;
   brandHref?: string;
 }
 
 export function V18Sidebar({
   navItems,
-  brandLabel = BRAND_NAME,
   brandHref = "/",
 }: V18SidebarProps) {
   const pathname = usePathname();
@@ -38,16 +36,14 @@ export function V18Sidebar({
         sidebarOpen ? "w-60" : "w-16"
       )}
     >
-      <div className="flex h-16 items-center px-4">
-        <Link
+      <div className="flex h-16 items-center px-3">
+        <BrandLogo
           href={brandHref}
-          className={cn(
-            "font-geist font-semibold text-white transition-opacity",
-            sidebarOpen ? "text-lg" : "text-sm"
-          )}
-        >
-          {sidebarOpen ? brandLabel : brandLabel.charAt(0)}
-        </Link>
+          compact={!sidebarOpen}
+          variant="sidebar"
+          priority
+          className={cn(!sidebarOpen && "mx-auto")}
+        />
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">

@@ -17,7 +17,10 @@ async function patchSiteSettings(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(settings),
   });
-  if (!res.ok) throw new Error("Failed to update settings");
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? "Failed to update settings");
+  }
   return res.json();
 }
 

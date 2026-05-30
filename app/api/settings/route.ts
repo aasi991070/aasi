@@ -1,4 +1,4 @@
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { getSiteSettings, updateSiteSettings } from "@/lib/queries/settings";
 import { createClient } from "@/lib/supabase/server";
@@ -28,7 +28,6 @@ export async function PATCH(request: NextRequest) {
 
     const settings = await updateSiteSettings({ monochrome_enabled });
 
-    revalidateTag("site-settings");
     revalidatePath("/", "layout");
 
     return NextResponse.json(settings);

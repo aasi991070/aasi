@@ -4,12 +4,11 @@ import { Bell, Menu, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
-import { BRAND_NAME } from "@/constants";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 import { useUiStore } from "@/hooks/useUiStore";
 import { cn } from "@/lib/utils/cn";
 
 interface V18TopNavProps {
-  brandLabel?: string;
   brandHref?: string;
   showAdminLink?: boolean;
 }
@@ -31,7 +30,6 @@ function getBreadcrumb(pathname: string): string {
 }
 
 export function V18TopNav({
-  brandLabel = BRAND_NAME,
   brandHref = "/",
   showAdminLink = true,
 }: V18TopNavProps) {
@@ -49,12 +47,7 @@ export function V18TopNav({
         >
           <Menu className="size-5" />
         </button>
-        <Link
-          href={brandHref}
-          className="hidden text-sm font-semibold text-v18-primary sm:block"
-        >
-          {brandLabel}
-        </Link>
+        <BrandLogo href={brandHref} compact className="hidden sm:inline-flex" />
         <span className="text-sm text-v18-muted">{getBreadcrumb(pathname)}</span>
       </div>
 
