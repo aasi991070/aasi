@@ -190,7 +190,7 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
                 onClick={() => toggleSize(size)}
                 className={`rounded-full border px-3 py-1 text-xs ${
                   sizes.includes(size)
-                    ? "border-v18-primary bg-blue-50 text-v18-primary"
+                    ? "v18-chip-selected"
                     : "border-v18-border v18-text-muted"
                 }`}
               >

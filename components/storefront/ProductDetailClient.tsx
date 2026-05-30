@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import type { Metadata } from "next";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ProductImageGallery } from "@/components/storefront/ProductImageGallery";
 import { CategoryBreadcrumb } from "@/components/storefront/CategoryBreadcrumb";
@@ -115,16 +114,4 @@ export function ProductDetailClient({
       )}
     </>
   );
-}
-
-export function buildProductMetadata(product: Product): Metadata {
-  return {
-    title: product.name,
-    description: product.description ?? `${product.name} — Aasi`,
-    openGraph: {
-      title: product.name,
-      description: product.description,
-      type: "website",
-    },
-  };
 }

@@ -95,7 +95,7 @@ function SortableNode({
 
         <Link
           href={`/admin/dashboard/categories/new?parent=${category.id}&level=${Math.min(category.level + 1, 4)}`}
-          className="rounded p-1 v18-text-muted hover:bg-blue-50 hover:text-v18-primary"
+          className="rounded p-1 v18-text-muted v18-hover-accent"
         >
           <Plus className="size-4" />
         </Link>
@@ -108,7 +108,7 @@ function SortableNode({
         <button
           type="button"
           onClick={() => onDelete(category.id)}
-          className="rounded p-1 v18-text-muted hover:bg-red-50 hover:text-v18-danger"
+          className="rounded p-1 v18-text-muted v18-hover-danger"
         >
           <Trash2 className="size-4" />
         </button>

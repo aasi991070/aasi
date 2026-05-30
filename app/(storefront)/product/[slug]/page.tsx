@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation";
 import { REVALIDATE_SECONDS } from "@/constants";
-import {
-  ProductDetailClient,
-  buildProductMetadata,
-} from "@/components/storefront/ProductDetailClient";
+import { ProductDetailClient } from "@/components/storefront/ProductDetailClient";
+import { buildProductMetadata } from "@/lib/metadata/product";
 import { getCategoryBreadcrumb } from "@/lib/queries/categories";
 import { getProductBySlug, getRelatedProducts } from "@/lib/queries/products";
 

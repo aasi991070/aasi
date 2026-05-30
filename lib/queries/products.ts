@@ -14,6 +14,10 @@ function mapProduct(row: Record<string, unknown>): Product {
     ...base,
     price: Number(row.price),
     sale_price: row.sale_price != null ? Number(row.sale_price) : undefined,
+    images: Array.isArray(row.images) ? (row.images as string[]) : [],
+    colors: Array.isArray(row.colors) ? (row.colors as string[]) : [],
+    sizes: Array.isArray(row.sizes) ? (row.sizes as string[]) : [],
+    tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
   };
 }
 

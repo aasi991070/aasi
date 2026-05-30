@@ -20,7 +20,7 @@ export function StatCard({ label, value, icon: Icon, trend, className }: StatCar
             <p className="mt-1 text-xs text-v18-success">{trend}</p>
           )}
         </div>
-        <div className="rounded-xl bg-blue-50 p-3">
+        <div className="rounded-xl v18-surface-accent p-3">
           <Icon className="size-5 text-v18-primary" strokeWidth={1.5} />
         </div>
       </div>

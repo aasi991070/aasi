@@ -27,8 +27,22 @@ export async function deleteImage(path: string): Promise<void> {
   if (error) throw error;
 }
 
-export function getPublicUrl(path: string): string {
+export function getPublicUrl(path: string | null | undefined): string {
+  if (!path?.trim()) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+
   const supabase = createClient();
   const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
   return data.publicUrl;
+}
+
+const PLACEHOLDER_IMAGE =
+  "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&q=80";
+
+export function resolveImageUrl(path?: string | null): string {
+  if (!path?.trim()) return PLACEHOLDER_IMAGE;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return getPublicUrl(path);
 }

@@ -12,11 +12,12 @@ interface ProductImageGalleryProps {
 }
 
 export function ProductImageGallery({ images, productName }: ProductImageGalleryProps) {
+  const safeImages = Array.isArray(images) ? images.filter(Boolean) : [];
   const resolvedImages =
-    images.length > 0
-      ? images.map((img) =>
-          img.startsWith("http") ? img : getPublicUrl(img)
-        )
+    safeImages.length > 0
+      ? safeImages
+          .map((img) => (img.startsWith("http") ? img : getPublicUrl(img)))
+          .filter(Boolean)
       : ["https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&q=80"];
 
   const [activeIndex, setActiveIndex] = useState(0);

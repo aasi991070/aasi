@@ -58,7 +58,7 @@ export function ImageUploader({
         }}
         className={cn(
           "flex flex-col items-center justify-center rounded-[var(--radius-input)] border-2 border-dashed border-v18-border px-6 py-10 transition-colors",
-          dragOver && "border-v18-primary bg-blue-50/50"
+          dragOver && "v18-drag-over"
         )}
       >
         <Upload className="size-8 v18-text-muted" strokeWidth={1.5} />

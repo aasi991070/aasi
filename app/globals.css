@@ -163,4 +163,139 @@
   .v18-text-muted {
     color: var(--color-v18-muted);
   }
+
+  /* Semantic status badges — token-driven, monochrome-aware */
+  .v18-status-success {
+    border: 1px solid var(--color-v18-status-success-border);
+    background: var(--color-v18-status-success-bg);
+    color: var(--color-v18-success);
+  }
+
+  .v18-status-danger {
+    border: 1px solid var(--color-v18-status-danger-border);
+    background: var(--color-v18-status-danger-bg);
+    color: var(--color-v18-danger);
+  }
+
+  .v18-status-info {
+    border: 1px solid var(--color-v18-status-info-border);
+    background: var(--color-v18-status-info-bg);
+    color: var(--color-v18-primary);
+  }
+
+  .v18-surface-accent {
+    background: var(--color-v18-surface-accent);
+  }
+
+  .v18-hover-accent:hover {
+    background: var(--color-v18-surface-accent-hover);
+    color: var(--color-v18-primary);
+  }
+
+  .v18-hover-danger:hover {
+    background: var(--color-v18-surface-danger-hover);
+    color: var(--color-v18-danger);
+  }
+
+  .v18-chip-selected {
+    border-color: var(--color-v18-primary);
+    background: var(--color-v18-surface-accent);
+    color: var(--color-v18-primary);
+  }
+
+  .v18-drag-over {
+    border-color: var(--color-v18-primary);
+    background: var(--color-v18-surface-accent-drag);
+  }
+
+  /* Admin login — token-driven */
+  .v18-login-bg {
+    background: linear-gradient(
+      135deg,
+      var(--color-v18-login-from) 0%,
+      var(--color-v18-login-mid) 50%,
+      var(--color-v18-login-to) 100%
+    );
+  }
+
+  .v18-login-btn {
+    background: var(--color-v18-primary);
+    color: var(--color-v18-white);
+  }
+
+  .v18-login-btn:hover {
+    background: var(--color-v18-primary-hover);
+  }
+}
+
+/* Default status/surface token values (color mode) */
+:root {
+  --color-v18-status-success-border: #bbf7d0;
+  --color-v18-status-success-bg: #f0fdf4;
+  --color-v18-status-danger-border: #fecaca;
+  --color-v18-status-danger-bg: #fef2f2;
+  --color-v18-status-info-border: #bfdbfe;
+  --color-v18-status-info-bg: #eff6ff;
+  --color-v18-surface-accent: #eff6ff;
+  --color-v18-surface-accent-hover: #eff6ff;
+  --color-v18-surface-accent-drag: rgb(239 246 255 / 0.5);
+  --color-v18-surface-danger-hover: #fef2f2;
+  --color-v18-login-from: #0f172a;
+  --color-v18-login-mid: #172554;
+  --color-v18-login-to: #1e293b;
+}
+
+/* Monochrome mode — remap all UI tokens to grayscale */
+html.monochrome {
+  --color-v18-primary: #374151;
+  --color-v18-primary-mid: #6b7280;
+  --color-v18-primary-hover: #1f2937;
+  --color-v18-sidebar-from: #1f2937;
+  --color-v18-sidebar-to: #374151;
+  --color-v18-bg-from: #1f2937;
+  --color-v18-bg-mid: #4b5563;
+  --color-v18-bg-to: #f3f4f6;
+  --color-v18-heading: #111827;
+  --color-v18-muted: #6b7280;
+  --color-v18-muted-dark: #4b5563;
+  --color-v18-border: #d1d5db;
+  --color-v18-success: #525252;
+  --color-v18-warning: #737373;
+  --color-v18-danger: #404040;
+  --color-v18-avatar-from: #9ca3af;
+  --color-v18-avatar-to: #d1d5db;
+
+  --color-background: #ffffff;
+  --color-foreground: #111827;
+  --color-card: #ffffff;
+  --color-card-foreground: #111827;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #111827;
+  --color-primary: #374151;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f3f4f6;
+  --color-secondary-foreground: #111827;
+  --color-muted: #f3f4f6;
+  --color-muted-foreground: #6b7280;
+  --color-accent: #f3f4f6;
+  --color-accent-foreground: #111827;
+  --color-destructive: #404040;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #d1d5db;
+  --color-input: #d1d5db;
+  --color-ring: #374151;
+
+  --color-v18-status-success-border: #d4d4d4;
+  --color-v18-status-success-bg: #f5f5f5;
+  --color-v18-status-danger-border: #d4d4d4;
+  --color-v18-status-danger-bg: #f5f5f5;
+  --color-v18-status-info-border: #d4d4d4;
+  --color-v18-status-info-bg: #f5f5f5;
+  --color-v18-surface-accent: #f3f4f6;
+  --color-v18-surface-accent-hover: #e5e7eb;
+  --color-v18-surface-accent-drag: rgb(243 244 246 / 0.5);
+  --color-v18-surface-danger-hover: #e5e7eb;
+  --color-v18-login-from: #111827;
+  --color-v18-login-mid: #374151;
+  --color-v18-login-to: #1f2937;
 }

@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-slate-800 px-4">
+    <div className="v18-login-bg flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold text-slate-900">{BRAND_ADMIN_NAME}</h1>
@@ -70,7 +70,7 @@ export default function AdminLoginPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="h-11 w-full bg-blue-700 hover:bg-blue-800"
+            className="v18-login-btn h-11 w-full"
           >
             {loading ? "Signing in..." : "Sign in"}
           </Button>

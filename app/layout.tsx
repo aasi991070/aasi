@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { GeistSans } from "geist/font/sans";
 import { BRAND_NAME, BRAND_TAGLINE } from "@/constants";
+import { getSiteSettings } from "@/lib/queries/settings";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -20,15 +21,24 @@ export const metadata: Metadata = {
   description: `${BRAND_TAGLINE} for the modern wardrobe.`,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const settings = await getSiteSettings();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={settings.monochrome_enabled ? "monochrome" : undefined}
+      data-monochrome={settings.monochrome_enabled ? "true" : "false"}
+      suppressHydrationWarning
+    >
       <body className={`${inter.variable} ${GeistSans.variable}`}>
-        <Providers>{children}</Providers>
+        <Providers initialMonochrome={settings.monochrome_enabled}>
+          {children}
+        </Providers>
       </body>
     </html>
   );

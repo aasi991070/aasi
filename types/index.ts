@@ -104,3 +104,7 @@ export interface DashboardStats {
   outOfStock: number;
   totalCategories: number;
 }
+
+export interface SiteSettings {
+  monochrome_enabled: boolean;
+}

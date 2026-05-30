@@ -38,17 +38,19 @@ export function ProductTable({ products, onDelete }: ProductTableProps) {
         </TableHeader>
         <TableBody>
           {products.map((product) => {
-            const imageUrl = product.thumbnail_url
-              ? getPublicUrl(product.thumbnail_url)
-              : product.images[0]
-                ? getPublicUrl(product.images[0])
-                : null;
+            const imagePath = product.thumbnail_url || product.images[0];
+            const imageUrl =
+              imagePath?.startsWith("http")
+                ? imagePath
+                : imagePath
+                  ? getPublicUrl(imagePath)
+                  : null;
 
             return (
               <TableRow key={product.id} className="hover:bg-slate-50">
                 <TableCell>
                   <div className="relative size-10 overflow-hidden rounded-md bg-slate-100">
-                    {imageUrl && (
+                    {imageUrl ? (
                       <Image
                         src={imageUrl}
                         alt={product.name}
@@ -56,7 +58,7 @@ export function ProductTable({ products, onDelete }: ProductTableProps) {
                         className="object-cover"
                         sizes="40px"
                       />
-                    )}
+                    ) : null}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -74,8 +76,8 @@ export function ProductTable({ products, onDelete }: ProductTableProps) {
                     variant="outline"
                     className={
                       product.in_stock
-                        ? "border-green-200 bg-green-50 text-v18-success"
-                        : "border-red-200 bg-red-50 text-v18-danger"
+                        ? "v18-status-success"
+                        : "v18-status-danger"
                     }
                   >
                     {product.in_stock ? `${product.stock_count} in stock` : "Out of stock"}
@@ -86,7 +88,7 @@ export function ProductTable({ products, onDelete }: ProductTableProps) {
                     variant="outline"
                     className={
                       product.is_active
-                        ? "border-blue-200 bg-blue-50 text-v18-primary"
+                        ? "v18-status-info"
                         : "border-slate-200 v18-text-muted"
                     }
                   >
@@ -97,7 +99,7 @@ export function ProductTable({ products, onDelete }: ProductTableProps) {
                   <div className="flex justify-end gap-1">
                     <Link
                       href={`/admin/dashboard/products/${product.id}`}
-                      className="rounded-lg p-2 v18-text-muted hover:bg-slate-100 hover:text-v18-primary"
+                      className="rounded-lg p-2 v18-text-muted hover:bg-slate-100 v18-hover-accent"
                     >
                       <Pencil className="size-4" />
                     </Link>
@@ -105,7 +107,7 @@ export function ProductTable({ products, onDelete }: ProductTableProps) {
                       <button
                         type="button"
                         onClick={() => onDelete(product.id)}
-                        className="rounded-lg p-2 v18-text-muted hover:bg-red-50 hover:text-v18-danger"
+                        className="rounded-lg p-2 v18-text-muted v18-hover-danger"
                       >
                         <Trash2 className="size-4" />
                       </button>
