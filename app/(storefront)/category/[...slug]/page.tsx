@@ -12,6 +12,7 @@ import {
   getCategoryBreadcrumb,
 } from "@/lib/queries/categories";
 import { getProductsByCategory } from "@/lib/queries/products";
+import { splitDescriptionParagraphs } from "@/lib/utils/formatDescription";
 import type { StorefrontFilters } from "@/types";
 
 export const revalidate = REVALIDATE_SECONDS;
@@ -79,6 +80,7 @@ export default async function CategoryPage({
     minPrice: filters.minPrice ? Number(filters.minPrice) : undefined,
     maxPrice: filters.maxPrice ? Number(filters.maxPrice) : undefined,
     inStock: filters.inStock === "true",
+    search: filters.search?.trim() || undefined,
   };
 
   const products = await getProductsByCategory(categoryIds, storefrontFilters);
@@ -87,12 +89,22 @@ export default async function CategoryPage({
     new Set(products.flatMap((p) => p.colors))
   ).sort();
 
+  const descriptionParagraphs = splitDescriptionParagraphs(
+    category.description
+  );
+
   return (
     <>
-      <PageHeader
-        title={category.name}
-        subtitle={category.description}
-      />
+      <PageHeader title={category.name} />
+      {descriptionParagraphs.length > 0 && (
+        <div className="mb-6 -mt-4 space-y-2">
+          {descriptionParagraphs.map((para, i) => (
+            <p key={i} className="text-sm v18-text-muted-on-gradient">
+              {para}
+            </p>
+          ))}
+        </div>
+      )}
       <CategoryBreadcrumb items={breadcrumb} onGradient />
 
       <div className="mt-6 flex gap-8">

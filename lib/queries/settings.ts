@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { DEFAULT_HERO } from "@/constants";
 import type { SiteSettings } from "@/types";
 
 const DEFAULT_SETTINGS: SiteSettings = {
   monochrome_enabled: false,
+  ...DEFAULT_HERO,
 };
 
 const STORAGE_BUCKET = "site-config";
@@ -16,6 +18,17 @@ function isMissingTableError(error: { code?: string; message?: string }) {
     error.message?.includes("site_settings") ||
     error.message?.includes("Could not find the table")
   );
+}
+
+function normalizeSettings(raw: Partial<SiteSettings>): SiteSettings {
+  return {
+    monochrome_enabled: Boolean(raw.monochrome_enabled),
+    hero_title: raw.hero_title?.trim() || DEFAULT_HERO.hero_title,
+    hero_subtitle: raw.hero_subtitle?.trim() || DEFAULT_HERO.hero_subtitle,
+    hero_cta_label: raw.hero_cta_label?.trim() || DEFAULT_HERO.hero_cta_label,
+    hero_cta_href: raw.hero_cta_href?.trim() || DEFAULT_HERO.hero_cta_href,
+    hero_image_url: raw.hero_image_url?.trim() || DEFAULT_HERO.hero_image_url,
+  };
 }
 
 async function ensureConfigBucket() {
@@ -49,9 +62,7 @@ async function getSettingsFromStorage(): Promise<SiteSettings> {
 
     const text = await data.text();
     const parsed = JSON.parse(text) as Partial<SiteSettings>;
-    return {
-      monochrome_enabled: Boolean(parsed.monochrome_enabled),
-    };
+    return normalizeSettings(parsed);
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -63,7 +74,7 @@ async function saveSettingsToStorage(
   await ensureConfigBucket();
   const supabase = createServiceClient();
   const current = await getSettingsFromStorage();
-  const next = { ...current, ...settings };
+  const next = normalizeSettings({ ...current, ...settings });
 
   const { error } = await supabase.storage
     .from(STORAGE_BUCKET)
@@ -76,12 +87,15 @@ async function saveSettingsToStorage(
   return next;
 }
 
+const SETTINGS_SELECT =
+  "monochrome_enabled, hero_title, hero_subtitle, hero_cta_label, hero_cta_href, hero_image_url";
+
 async function fetchSiteSettingsUncached(): Promise<SiteSettings> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("site_settings")
-      .select("monochrome_enabled")
+      .select(SETTINGS_SELECT)
       .eq("id", 1)
       .maybeSingle();
 
@@ -94,9 +108,7 @@ async function fetchSiteSettingsUncached(): Promise<SiteSettings> {
 
     if (!data) return DEFAULT_SETTINGS;
 
-    return {
-      monochrome_enabled: Boolean(data.monochrome_enabled),
-    };
+    return normalizeSettings(data as Partial<SiteSettings>);
   } catch {
     return getSettingsFromStorage();
   }
@@ -120,13 +132,11 @@ export async function updateSiteSettings(
       },
       { onConflict: "id" }
     )
-    .select("monochrome_enabled")
+    .select(SETTINGS_SELECT)
     .single();
 
   if (!error) {
-    return {
-      monochrome_enabled: Boolean(data.monochrome_enabled),
-    };
+    return normalizeSettings(data as Partial<SiteSettings>);
   }
 
   if (isMissingTableError(error)) {

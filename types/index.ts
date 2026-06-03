@@ -66,6 +66,32 @@ export interface StorefrontFilters {
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
+  search?: string;
+}
+
+export interface ProductReview {
+  id: string;
+  product_id: string;
+  author_name: string;
+  rating: number;
+  body: string;
+  created_at: string;
+}
+
+export interface ReviewSummary {
+  average: number;
+  count: number;
+}
+
+export interface ProductSearchResult {
+  product: Product;
+  matchedFields: string[];
+}
+
+export interface CategorySearchResult {
+  category: Category;
+  href: string;
+  matchedFields: string[];
 }
 
 export interface CategoryFormData {
@@ -107,4 +133,9 @@ export interface DashboardStats {
 
 export interface SiteSettings {
   monochrome_enabled: boolean;
+  hero_title: string;
+  hero_subtitle: string;
+  hero_cta_label: string;
+  hero_cta_href: string;
+  hero_image_url: string;
 }

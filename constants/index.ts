@@ -17,6 +17,18 @@ export const BRAND_ADMIN_NAME = "Aasi CMS";
 export const BRAND_TAGLINE = "Luxury Clothing";
 export const BRAND_LOGO_PATH = "/logo.png";
 
+export const CURRENCY_CODE = "INR";
+export const CURRENCY_LOCALE = "en-IN";
+
+export const DEFAULT_HERO = {
+  hero_title: "Timeless Craft, Modern Silhouette",
+  hero_subtitle: "Discover our curated collection of luxury essentials",
+  hero_cta_label: "Explore Collection",
+  hero_cta_href: "/category/mens",
+  hero_image_url:
+    "https://images.unsplash.com/photo-1441984904996-e0b46a68737d?w=1920&q=80",
+} as const;
+
 export const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL"] as const;
 
 export const GENDERS = [

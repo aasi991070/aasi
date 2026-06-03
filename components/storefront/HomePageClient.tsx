@@ -14,16 +14,24 @@ interface HomePageClientProps {
   featured: Product[];
   newArrivals: Product[];
   categoryCards: { l1: Category; children: Category[] }[];
+  hero: {
+    title: string;
+    subtitle: string;
+    ctaLabel: string;
+    ctaHref: string;
+    imageUrl: string;
+  };
 }
 
 export function HomePageClient({
   featured,
   newArrivals,
   categoryCards,
+  hero,
 }: HomePageClientProps) {
   return (
     <>
-      <Hero />
+      <Hero {...hero} />
 
       <PageHeader title="Featured" subtitle="Curated selections from our collection" />
       <ProductGrid products={featured} />

@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/admin/PageHeader";
 import { MonochromeToggle } from "@/components/admin/MonochromeToggle";
+import { HeroSettingsForm } from "@/components/admin/HeroSettingsForm";
 import { BRAND_NAME, BRAND_TAGLINE, REVALIDATE_SECONDS } from "@/constants";
 import { getSiteSettings } from "@/lib/queries/settings";
 
@@ -22,6 +23,16 @@ export default async function AdminSettingsPage() {
           </p>
           <div className="mt-6">
             <MonochromeToggle initialEnabled={settings.monochrome_enabled} />
+          </div>
+        </div>
+
+        <div className="v18-card p-6">
+          <h2 className="text-lg font-semibold v18-text-heading">Homepage hero</h2>
+          <p className="mt-1 text-sm v18-text-muted">
+            Control the banner on the storefront home page.
+          </p>
+          <div className="mt-6">
+            <HeroSettingsForm initial={settings} />
           </div>
         </div>
 

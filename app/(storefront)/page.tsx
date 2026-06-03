@@ -8,14 +8,16 @@ import {
   getFeaturedProducts,
   getNewArrivals,
 } from "@/lib/queries/products";
+import { getSiteSettings } from "@/lib/queries/settings";
 
 export const revalidate = REVALIDATE_SECONDS;
 
 export default async function HomePage() {
-  const [featured, newArrivals, level1Categories] = await Promise.all([
+  const [featured, newArrivals, level1Categories, settings] = await Promise.all([
     getFeaturedProducts(8),
     getNewArrivals(12),
     getCategoriesByLevel(1, true),
+    getSiteSettings(),
   ]);
 
   const categoryCards = await Promise.all(
@@ -30,6 +32,13 @@ export default async function HomePage() {
       featured={featured}
       newArrivals={newArrivals}
       categoryCards={categoryCards}
+      hero={{
+        title: settings.hero_title,
+        subtitle: settings.hero_subtitle,
+        ctaLabel: settings.hero_cta_label,
+        ctaHref: settings.hero_cta_href,
+        imageUrl: settings.hero_image_url,
+      }}
     />
   );
 }

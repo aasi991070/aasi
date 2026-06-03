@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { getPublicUrl } from "@/lib/storage/images";
 
 interface HeroProps {
   title?: string;
@@ -19,6 +19,13 @@ export function Hero({
   ctaHref = "/category/mens",
   imageUrl = "https://images.unsplash.com/photo-1441984904996-e0b46a68737d?w=1920&q=80",
 }: HeroProps) {
+  const resolvedImageUrl =
+    imageUrl.startsWith("http")
+      ? imageUrl
+      : imageUrl.startsWith("products/") || imageUrl.startsWith("hero/")
+        ? getPublicUrl(imageUrl)
+        : imageUrl;
+
   return (
     <section className="mb-8">
       <div className="mb-6">
@@ -31,7 +38,7 @@ export function Hero({
       <div className="v18-card overflow-hidden p-0">
         <div className="relative aspect-[21/9] min-h-[280px]">
           <Image
-            src={imageUrl}
+            src={resolvedImageUrl}
             alt="Hero"
             fill
             priority

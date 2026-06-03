@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAllCategories } from "@/lib/queries/categories";
 import { PRODUCTS_PAGE_SIZE } from "@/constants";
+import {
+  buildProductSearchText,
+  matchesAllTokens,
+  tokenizeQuery,
+} from "@/lib/utils/searchText";
 import type {
   DashboardStats,
   Product,
@@ -7,6 +13,20 @@ import type {
   ProductFormData,
   StorefrontFilters,
 } from "@/types";
+
+function buildAdminSearchOr(search: string): string {
+  const tokens = tokenizeQuery(search);
+  if (!tokens.length) return "";
+
+  return tokens
+    .flatMap((t) => [
+      `name.ilike.%${t}%`,
+      `slug.ilike.%${t}%`,
+      `description.ilike.%${t}%`,
+      `gender.ilike.%${t}%`,
+    ])
+    .join(",");
+}
 
 function mapProduct(row: Record<string, unknown>): Product {
   const base = row as unknown as Product;
@@ -38,9 +58,8 @@ export async function getProducts(
       .range(from, to);
 
     if (filters.search) {
-      query = query.or(
-        `name.ilike.%${filters.search}%,slug.ilike.%${filters.search}%`
-      );
+      const orClause = buildAdminSearchOr(filters.search);
+      if (orClause) query = query.or(orClause);
     }
     if (filters.categoryId) {
       query = query.eq("category_id", filters.categoryId);
@@ -61,9 +80,19 @@ export async function getProducts(
     const { data, error, count } = await query;
     if (error) throw error;
 
+    let products = (data ?? []).map(mapProduct);
+
+    if (filters.search) {
+      const tokens = tokenizeQuery(filters.search);
+      const allCategories = await getAllCategories();
+      products = products.filter((p) =>
+        matchesAllTokens(buildProductSearchText(p, allCategories), tokens)
+      );
+    }
+
     return {
-      products: (data ?? []).map(mapProduct),
-      total: count ?? 0,
+      products,
+      total: filters.search ? products.length : (count ?? 0),
     };
   } catch {
     return { products: [], total: 0 };
@@ -192,6 +221,14 @@ export async function getProductsByCategory(
         storefrontFilters.colors!.some((color) =>
           p.colors.some((c) => c.toLowerCase() === color.toLowerCase())
         )
+      );
+    }
+
+    if (storefrontFilters.search) {
+      const tokens = tokenizeQuery(storefrontFilters.search);
+      const allCategories = await getAllCategories(true);
+      products = products.filter((p) =>
+        matchesAllTokens(buildProductSearchText(p, allCategories), tokens)
       );
     }
 

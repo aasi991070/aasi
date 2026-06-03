@@ -9,7 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { GENDERS, SIZES } from "@/constants";
+import { SIZES } from "@/constants";
+import {
+  findLevel1Category,
+  genderFromCategorySlug,
+} from "@/lib/utils/getGenderCategory";
 import { useCreateProduct, useUpdateProduct } from "@/hooks/useProducts";
 import { useUiStore } from "@/hooks/useUiStore";
 import { slugify } from "@/lib/utils/slugify";
@@ -23,7 +27,10 @@ const productSchema = z.object({
   price: z.coerce.number().min(0),
   sale_price: z.coerce.number().optional(),
   category_id: z.string().optional(),
-  gender: z.enum(["men", "women", "unisex"]).optional(),
+  gender: z.preprocess(
+    (val) => (val === "" || val == null ? undefined : val),
+    z.enum(["men", "women", "unisex"]).optional()
+  ),
   sizes: z.array(z.string()),
   colors: z.array(z.string()),
   images: z.array(z.string()),
@@ -83,6 +90,7 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
   });
 
   const name = watch("name");
+  const categoryId = watch("category_id");
   const sizes = watch("sizes");
   const images = watch("images");
 
@@ -91,6 +99,14 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
       setValue("slug", slugify(name));
     }
   }, [name, existing, setValue]);
+
+  useEffect(() => {
+    if (!categoryId) return;
+    const l1 = findLevel1Category(categoryId, flatCategories);
+    if (!l1) return;
+    const gender = genderFromCategorySlug(l1.slug);
+    if (gender) setValue("gender", gender);
+  }, [categoryId, flatCategories, setValue]);
 
   const onSubmit = async (data: ProductFormValues) => {
     try {
@@ -145,7 +161,10 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
 
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
-          <Textarea id="description" rows={5} {...register("description")} />
+          <Textarea id="description" rows={6} {...register("description")} />
+          <p className="text-xs v18-text-muted">
+            Use a blank line between paragraphs.
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -164,21 +183,7 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
           </select>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="gender">Gender</Label>
-          <select
-            id="gender"
-            {...register("gender")}
-            className="flex h-10 w-full rounded-[var(--radius-input)] border border-v18-border bg-white px-3 text-sm"
-          >
-            <option value="">Select gender</option>
-            {GENDERS.map((g) => (
-              <option key={g.value} value={g.value}>
-                {g.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <input type="hidden" {...register("gender")} />
 
         <div className="space-y-2">
           <Label>Sizes</Label>

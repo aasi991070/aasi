@@ -6,21 +6,32 @@ import { ProductImageGallery } from "@/components/storefront/ProductImageGallery
 import { CategoryBreadcrumb } from "@/components/storefront/CategoryBreadcrumb";
 import { SizeSelector } from "@/components/storefront/SizeSelector";
 import { ColorSelector } from "@/components/storefront/ColorSelector";
+import Link from "next/link";
 import { ProductGrid } from "@/components/storefront/ProductGrid";
+import { ProductReviews } from "@/components/storefront/ProductReviews";
 import { formatPrice } from "@/lib/utils/formatPrice";
-import type { Category, Product } from "@/types";
+import { splitDescriptionParagraphs } from "@/lib/utils/formatDescription";
+import { getCategoryHref } from "@/lib/utils/getGenderCategory";
+import type { Category, Product, ProductReview, ReviewSummary } from "@/types";
 
 interface ProductDetailClientProps {
   product: Product;
   breadcrumb: Category[];
   related: Product[];
+  genderCategory?: Category;
+  initialReviews: ProductReview[];
+  reviewSummary: ReviewSummary;
 }
 
 export function ProductDetailClient({
   product,
   breadcrumb,
   related,
+  genderCategory,
+  initialReviews,
+  reviewSummary,
 }: ProductDetailClientProps) {
+  const descriptionParagraphs = splitDescriptionParagraphs(product.description);
   const [selectedSize, setSelectedSize] = useState<string>();
   const [selectedColor, setSelectedColor] = useState(
     product.colors[0] ?? undefined
@@ -45,6 +56,15 @@ export function ProductDetailClient({
 
         <div className="v18-card p-6 lg:p-8">
           <CategoryBreadcrumb items={breadcrumb} />
+
+          {genderCategory && (
+            <Link
+              href={getCategoryHref([genderCategory])}
+              className="mt-3 inline-flex rounded-full border border-v18-border px-3 py-1 text-xs font-medium uppercase tracking-wider text-v18-primary hover:bg-slate-50"
+            >
+              {genderCategory.name}
+            </Link>
+          )}
 
           <div className="mt-4 flex items-center gap-3">
             {hasSale ? (
@@ -97,15 +117,26 @@ export function ProductDetailClient({
             Add to Cart
           </button>
 
-          {product.description && (
+          {descriptionParagraphs.length > 0 && (
             <div className="mt-8 border-t border-v18-border pt-6">
-              <p className="text-sm leading-relaxed v18-text-muted">
-                {product.description}
-              </p>
+              {descriptionParagraphs.map((para, i) => (
+                <p
+                  key={i}
+                  className="mt-3 first:mt-0 text-sm leading-relaxed v18-text-muted"
+                >
+                  {para}
+                </p>
+              ))}
             </div>
           )}
         </div>
       </div>
+
+      <ProductReviews
+        productId={product.id}
+        initialReviews={initialReviews}
+        initialSummary={reviewSummary}
+      />
 
       {related.length > 0 && (
         <div className="mt-12">

@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
+import { DEFAULT_HERO } from "@/constants";
 import { getSiteSettings, updateSiteSettings } from "@/lib/queries/settings";
 import { createClient } from "@/lib/supabase/server";
 
@@ -8,7 +9,10 @@ export async function GET() {
     const settings = await getSiteSettings();
     return NextResponse.json(settings);
   } catch {
-    return NextResponse.json({ monochrome_enabled: false });
+    return NextResponse.json({
+      monochrome_enabled: false,
+      ...DEFAULT_HERO,
+    });
   }
 }
 
@@ -24,9 +28,27 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const monochrome_enabled = Boolean(body.monochrome_enabled);
 
-    const settings = await updateSiteSettings({ monochrome_enabled });
+    const settings = await updateSiteSettings({
+      ...(body.monochrome_enabled !== undefined && {
+        monochrome_enabled: Boolean(body.monochrome_enabled),
+      }),
+      ...(body.hero_title !== undefined && {
+        hero_title: String(body.hero_title),
+      }),
+      ...(body.hero_subtitle !== undefined && {
+        hero_subtitle: String(body.hero_subtitle),
+      }),
+      ...(body.hero_cta_label !== undefined && {
+        hero_cta_label: String(body.hero_cta_label),
+      }),
+      ...(body.hero_cta_href !== undefined && {
+        hero_cta_href: String(body.hero_cta_href),
+      }),
+      ...(body.hero_image_url !== undefined && {
+        hero_image_url: String(body.hero_image_url),
+      }),
+    });
 
     revalidatePath("/", "layout");
 

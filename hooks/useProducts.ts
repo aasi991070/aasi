@@ -18,9 +18,23 @@ async function fetchProducts(filters: ProductFilters) {
     .range(from, to);
 
   if (filters.search) {
-    query = query.or(
-      `name.ilike.%${filters.search}%,slug.ilike.%${filters.search}%`
-    );
+    const tokens = filters.search
+      .toLowerCase()
+      .split(/\s+/)
+      .map((t) => t.trim())
+      .filter(Boolean);
+    if (tokens.length) {
+      query = query.or(
+        tokens
+          .flatMap((t) => [
+            `name.ilike.%${t}%`,
+            `slug.ilike.%${t}%`,
+            `description.ilike.%${t}%`,
+            `gender.ilike.%${t}%`,
+          ])
+          .join(",")
+      );
+    }
   }
   if (filters.categoryId) query = query.eq("category_id", filters.categoryId);
   if (filters.gender) query = query.eq("gender", filters.gender);

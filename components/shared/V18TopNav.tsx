@@ -1,10 +1,11 @@
 "use client";
 
-import { Bell, Menu, Search } from "lucide-react";
+import { Suspense } from "react";
+import { Bell, Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
 import { BrandLogo } from "@/components/shared/BrandLogo";
+import { StorefrontSearch } from "@/components/storefront/StorefrontSearch";
 import { useUiStore } from "@/hooks/useUiStore";
 import { cn } from "@/lib/utils/cn";
 
@@ -52,13 +53,11 @@ export function V18TopNav({
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-v18-muted" />
-          <Input
-            placeholder="Search..."
-            className="h-9 w-64 rounded-[var(--radius-v18-input)] border-v18-border pl-9"
-          />
-        </div>
+        <Suspense fallback={null}>
+          <div className="hidden md:block">
+            <StorefrontSearch />
+          </div>
+        </Suspense>
         <button
           type="button"
           className="rounded-lg p-2 text-v18-muted hover:bg-slate-50"

@@ -2,8 +2,16 @@ import { notFound } from "next/navigation";
 import { REVALIDATE_SECONDS } from "@/constants";
 import { ProductDetailClient } from "@/components/storefront/ProductDetailClient";
 import { buildProductMetadata } from "@/lib/metadata/product";
-import { getCategoryBreadcrumb } from "@/lib/queries/categories";
+import {
+  getAllCategories,
+  getCategoryBreadcrumb,
+} from "@/lib/queries/categories";
 import { getProductBySlug, getRelatedProducts } from "@/lib/queries/products";
+import {
+  getReviewSummary,
+  getReviewsByProductId,
+} from "@/lib/queries/reviews";
+import { findLevel1Category } from "@/lib/utils/getGenderCategory";
 
 export const revalidate = REVALIDATE_SECONDS;
 
@@ -27,18 +35,35 @@ export default async function ProductPage({
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const [breadcrumb, related] = await Promise.all([
+  const allCategories = await getAllCategories(true);
+  const genderCategory = findLevel1Category(
+    product.category_id,
+    allCategories
+  );
+
+  const [breadcrumb, related, reviews, reviewSummary] = await Promise.all([
     product.category_id
       ? getCategoryBreadcrumb(product.category_id)
       : Promise.resolve([]),
     getRelatedProducts(product),
+    getReviewsByProductId(product.id),
+    getReviewSummary(product.id),
   ]);
+
+  const mergedBreadcrumb = (() => {
+    if (!genderCategory) return breadcrumb;
+    if (breadcrumb.some((c) => c.id === genderCategory.id)) return breadcrumb;
+    return [genderCategory, ...breadcrumb];
+  })();
 
   return (
     <ProductDetailClient
       product={product}
-      breadcrumb={breadcrumb}
+      breadcrumb={mergedBreadcrumb}
       related={related}
+      genderCategory={genderCategory}
+      initialReviews={reviews}
+      reviewSummary={reviewSummary}
     />
   );
 }
