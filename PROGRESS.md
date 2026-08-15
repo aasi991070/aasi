@@ -31,7 +31,7 @@ Branch: remediation · Started: 16 Aug 2026
 - [x] 05-search-sanitise — **done**
 
 ## Phase 1 — Storefront rebuild
-- [ ] 06-storefront-tokens
+- [x] 06-storefront-tokens — **done**
 - [ ] 07-storefront-shell-swap
 - [ ] 08-navbar-rebuild
 - [ ] 09a-footer
@@ -97,6 +97,7 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 |---|---|
 | 01 | Run `000`, `001`, `003` in the Supabase SQL Editor, then insert the `admin_users` row (SQL above). Also: Authentication → Providers → Email → turn off *Enable signups*, and check Advisors → Security reports no missing RLS. Nothing later in the plan is blocked on this, but the live site keeps its old, unreviewed policies until it is done. |
 | **04** | ~~A reachable Supabase project.~~ **Resolved** — restored, gate is green again. But the restored database is missing `site_settings`, `product_reviews` and `admin_users`, so **every PDP currently serves an error page**. Running `000`–`004` (row above) fixes it. This is now the single highest-priority manual task. |
+| 06 | Add `NEXT_PUBLIC_SITE_URL` to the Vercel project (production + preview), set to the real public origin with no trailing slash. It is now `metadataBase`, so without it every canonical and Open Graph URL resolves against `http://localhost:3000`. Low priority until prompts 20–21 add sitemaps and structured data, but it costs one line. |
 | 02 | Add `REVIEW_IP_SALT` to the Vercel project (production + preview + development). I generated one into `.env.local` for local work; production needs its own. Any 32-byte hex value: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. Until it is set in Vercel, `POST /api/reviews` returns 503 by design rather than accepting unlimited unrate-limited submissions. Also run `004`. |
 
 ## Decisions and deviations
@@ -129,6 +130,11 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | 05 | Added `"target": "ES2020"` to `tsconfig.json`. | Out of scope but unavoidable: there was no `target`, so it defaulted to ES5 and `tsc` rejected the `u` flag the prompt requires (`TS1501`). `lib` was already `esnext`, so the file was internally inconsistent. `noEmit` is set, so this changes nothing about output — only which syntax `tsc` accepts. |
 | 05 | Tokens are sliced to 32 by code point (`Array.from`), not by `String.prototype.slice`. | A plain slice can cut a surrogate pair in half and leave a lone half-character that matches nothing. |
 | 05 | Exported `PRODUCT_SEARCH_FIELDS` / `CATEGORY_SEARCH_FIELDS` alongside `buildIlikeOrFilter`. | The prompt centralised the filter *construction* but left the field lists duplicated at all four call sites, which is how they drift. Now a field is added in one place. |
+| 06 | **Admin body text changes from Inter to DM Sans**, so the prompt's "admin pages look identical to before" criterion is not literally met. | Unavoidable, and I think intended. The prompt says to bind DM Sans to `--font-sans` and delete Inter, and the admin body already renders in `var(--font-sans)`. Keeping Inter for admin would mean shipping three families to kill two. Everything else on admin is byte-identical — every `--color-v18-*`, `--radius-v18-*`, `--shadow-v18-*` and shadcn token verified unchanged in the browser. |
+| 06 | Added a `--font-logo` token; the prompt only listed `.font-display`. | `BrandMark.tsx` uses `font-logo`, which the prompt itself names as broken but never fixes, and "do not change any component in this prompt" rules out editing BrandMark. A token is the only lever available. |
+| 06 | `--font-logo` is redeclared on `body` rather than written as `var(--font-display)` inside `@theme`. | The obvious version silently fails: a custom property whose value contains `var()` resolves where it is *declared*, so at `:root` it captures the Georgia fallback before next/font's class on `<body>` supplies Cormorant. Caught in the browser — the utility was computing to Georgia. Declaring it on `body` resolves it against the real family. |
+| 06 | No hand-written `.font-display` utility in `@layer utilities`. | Redundant on Tailwind v4: a `--font-display` entry in `@theme` already generates `.font-display { font-family: var(--font-display) }`. Writing it twice would be two sources of truth for one class. Verified the utility exists and computes to Cormorant. |
+| 06 | The reduced-motion block targets `[class^="store-"], [class*=" store-"]` instead of listing each utility. | Later prompts add more `store-*` utilities and would have to remember to update a hand-maintained list. The selector matches only class tokens that *begin* with `store-`, so `text-store-ink` and friends are untouched — confirmed the v18 card keeps its own transition under emulated reduced motion. |
 | 05 | Vitest config is `vitest.config.mts`, not `.ts`. | Vitest does not read tsconfig `paths`, so the `@/` alias has to be redeclared or nothing under test resolves. `.mts` avoids a Vite warning about ESM syntax in a file loaded as CommonJS. Also added `test:watch`. |
 
 ## Verification notes
@@ -229,10 +235,35 @@ failures. Flagged for 28b, which owns monitoring.
 - The unicode test is the one that earned its keep — it failed on the first run
   and exposed the `\p{M}` bug described above.
 
+`06` — checked in a real browser against a production build, not by reading the
+stylesheet:
+
+- All seven `--color-store-*` tokens resolve on the home page with their
+  specified values. `.store-btn` computes to a 44px-min-height, 1px
+  `rgb(200,169,110)` outlined button with `box-shadow: none`; `.store-hairline`
+  and `.store-surface` likewise.
+- Under emulated `prefers-reduced-motion: reduce`, `.store-btn` and
+  `.store-surface` drop to `transition-property: none`, while `.v18-stat-card`
+  keeps its own 0.2s transform transition — the scoping is doing what it claims.
+- Served CSS contains exactly two families, `Cormorant_Garamond` and `DM_Sans`.
+  No literal `Inter` or `Geist` anywhere in the HTML or CSS, `.font-geist` is
+  gone, and `node_modules/geist` is uninstalled.
+- Every `--color-v18-*`, `--radius-v18-*`, `--shadow-v18-*` and shadcn token
+  re-read on `/admin/login` and unchanged.
+- `font-logo` initially computed to the Georgia fallback. Fixed and re-verified;
+  it now resolves to Cormorant.
+
+`metadataBase` is set but currently unexercised — no metadata in the app
+declares a relative image URL yet, so there is nothing for it to resolve. It
+becomes load-bearing in 20 and 21.
+
 ## Deferred
 
 | Issue | Which prompt should own it |
 |---|---|
+| `BrandMark.tsx` asks for `font-extrabold` at `tracking-[0.18em]`, but Cormorant is loaded at 300/400/500 only, so the wordmark renders synthetically bolded. The token now at least points at a brand family instead of nothing; the right fix is to restyle the mark. | 08-navbar-rebuild |
+| The storefront still renders the admin shell — the home page has a sidebar toggle, a notification bell and a public `/admin` link, and `BrandMark` is not mounted at all. Expected at this stage; tokens exist now but nothing consumes them. | 07-storefront-shell-swap |
+| `NEXT_PUBLIC_SITE_URL` is set to `http://localhost:3000` locally. Production needs the real origin in Vercel or every canonical and Open Graph URL will point at localhost. | flagged for Arif; see "Blocked on Arif" |
 | Tokens may still contain `_`, which is a single-character wildcard in SQL `LIKE`, so `is_active` also matches `isXactive`. Harmless over-matching, not injection, and PostgREST's `or=` grammar has nowhere to put an `ESCAPE` clause. Full-text search removes the question. | 17-indexes-and-fts |
 | Single-character tokens are dropped, so a one-character CJK search matches nothing. No such products exist today. | 17-indexes-and-fts |
 | `npm audit` reports 7 high-severity advisories, all pre-existing and transitive (`next`/`postcss`, and `brace-expansion`/`glob`/`js-yaml` under the ESLint tooling). Vitest added none. Not touched here because upgrading Next mid-run would invalidate every version assumption in the plan. | 28b-ci-and-monitoring |

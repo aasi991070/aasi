@@ -53,6 +53,23 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+
+  /* Storefront — luxury minimal. Entirely separate from the v18 admin set
+     above: off-white paper, near-black ink, one warm gold accent. Never mix
+     the two namespaces in one component. */
+  --color-store-ink: #0f0f0f;
+  --color-store-ink-muted: #6b6b6b;
+  --color-store-surface: #fafaf8;
+  --color-store-white: #ffffff;
+  --color-store-border: #e8e6e1;
+  --color-store-accent: #c8a96e;
+  --color-store-accent-dark: #9d7f48;
+
+  /* Declared here so Tailwind generates `font-display` / `font-logo`. The real
+     families arrive from next/font, whose classes set these same variables on
+     <body> and so win over these fallbacks. */
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-logo: Georgia, "Times New Roman", serif;
 }
 
 @layer base {
@@ -63,6 +80,12 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans), system-ui, sans-serif;
+
+    /* Has to be redeclared here rather than as `var(--font-display)` inside
+       @theme: a custom property containing var() is resolved where it is
+       declared, so at :root it would capture the Georgia fallback before
+       next/font's class on <body> has supplied the real family. */
+    --font-logo: var(--font-display);
   }
 }
 
@@ -71,8 +94,52 @@
     font-family: var(--font-sans), system-ui, sans-serif;
   }
 
-  .font-geist {
-    font-family: var(--font-geist-sans), var(--font-sans), system-ui, sans-serif;
+  /* Storefront surfaces and actions. Elevation comes from whitespace and a
+     single hairline — no shadows here, unlike the v18 cards below. */
+  .store-surface {
+    background: var(--color-store-surface);
+    color: var(--color-store-ink);
+  }
+
+  .store-hairline {
+    border: 1px solid var(--color-store-border);
+    box-shadow: none;
+  }
+
+  .store-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    border: 1px solid var(--color-store-accent);
+    background: transparent;
+    color: var(--color-store-ink);
+    transition:
+      background-color 250ms ease-out,
+      border-color 250ms ease-out,
+      color 250ms ease-out;
+  }
+
+  .store-btn:hover {
+    border-color: var(--color-store-accent-dark);
+    background: var(--color-store-accent);
+    color: var(--color-store-white);
+  }
+
+  .store-btn:focus-visible {
+    outline: 2px solid var(--color-store-accent-dark);
+    outline-offset: 2px;
+  }
+
+  /* Matches any element carrying a `store-*` class, so utilities added by
+     later prompts are covered without having to remember this block. */
+  @media (prefers-reduced-motion: reduce) {
+    [class^="store-"],
+    [class*=" store-"] {
+      transition: none !important;
+      transform: none !important;
+      animation: none !important;
+    }
   }
 
   /* v18 layout chrome */
