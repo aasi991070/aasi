@@ -1,3 +1,4 @@
+import { assertOk } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/server";
 import { getAllCategories } from "@/lib/queries/categories";
 import {
@@ -33,11 +34,12 @@ export async function searchProducts(
   const tokens = tokenizeQuery(query);
   if (!tokens.length) return [];
 
-  try {
-    const supabase = await createClient();
-    const allCategories = await getAllCategories(true);
+  const supabase = await createClient();
+  const allCategories = await getAllCategories(true);
 
-    const { data, error } = await supabase
+  const data = assertOk(
+    "search.products",
+    await supabase
       .from("products")
       .select("*, category:categories(*)")
       .eq("is_active", true)
@@ -52,24 +54,20 @@ export async function searchProducts(
         ].join(",")
       )
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(100)
+  );
 
-    if (error) throw error;
+  const products = (data ?? []).map(mapProduct);
 
-    const products = (data ?? []).map(mapProduct);
-
-    return products
-      .filter((product) => {
-        const haystack = buildProductSearchText(product, allCategories);
-        return matchesAllTokens(haystack, tokens);
-      })
-      .map((product) => ({
-        product,
-        matchedFields: getMatchedFields(product, tokens, allCategories),
-      }));
-  } catch {
-    return [];
-  }
+  return products
+    .filter((product) => {
+      const haystack = buildProductSearchText(product, allCategories);
+      return matchesAllTokens(haystack, tokens);
+    })
+    .map((product) => ({
+      product,
+      matchedFields: getMatchedFields(product, tokens, allCategories),
+    }));
 }
 
 export async function searchCategories(
@@ -78,11 +76,12 @@ export async function searchCategories(
   const tokens = tokenizeQuery(query);
   if (!tokens.length) return [];
 
-  try {
-    const supabase = await createClient();
-    const allCategories = await getAllCategories(true);
+  const supabase = await createClient();
+  const allCategories = await getAllCategories(true);
 
-    const { data, error } = await supabase
+  const data = assertOk(
+    "search.categories",
+    await supabase
       .from("categories")
       .select("*")
       .eq("is_active", true)
@@ -95,39 +94,35 @@ export async function searchCategories(
           ])
           .join(",")
       )
-      .limit(20);
+      .limit(20)
+  );
 
-    if (error) throw error;
+  return (data ?? [])
+    .map((row) => row as Category)
+    .filter((category) => {
+      const haystack = [category.name, category.slug, category.description]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return matchesAllTokens(haystack, tokens);
+    })
+    .map((category) => {
+      const path = getCategoryBreadcrumbPath(category.id, allCategories);
+      const matchedFields: string[] = [];
+      if (tokens.some((t) => category.name.toLowerCase().includes(t)))
+        matchedFields.push("name");
+      if (tokens.some((t) => category.slug.toLowerCase().includes(t)))
+        matchedFields.push("slug");
+      if (
+        category.description &&
+        tokens.some((t) => category.description!.toLowerCase().includes(t))
+      )
+        matchedFields.push("description");
 
-    return (data ?? [])
-      .map((row) => row as Category)
-      .filter((category) => {
-        const haystack = [category.name, category.slug, category.description]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return matchesAllTokens(haystack, tokens);
-      })
-      .map((category) => {
-        const path = getCategoryBreadcrumbPath(category.id, allCategories);
-        const matchedFields: string[] = [];
-        if (tokens.some((t) => category.name.toLowerCase().includes(t)))
-          matchedFields.push("name");
-        if (tokens.some((t) => category.slug.toLowerCase().includes(t)))
-          matchedFields.push("slug");
-        if (
-          category.description &&
-          tokens.some((t) => category.description!.toLowerCase().includes(t))
-        )
-          matchedFields.push("description");
-
-        return {
-          category,
-          href: getCategoryHref(path.length ? path : [category]),
-          matchedFields,
-        };
-      });
-  } catch {
-    return [];
-  }
+      return {
+        category,
+        href: getCategoryHref(path.length ? path : [category]),
+        matchedFields,
+      };
+    });
 }

@@ -2,11 +2,32 @@
 
 Branch: remediation · Started: 16 Aug 2026
 
+> ## ⚠️ Supabase is back, but the schema is only partially there
+>
+> The outage that halted prompt 04 is over — `laxphbevpxucjnzkaiib.supabase.co`
+> resolves again and the gate is green. But the restored database has
+> `categories`, `products` and `product_variants` only. `site_settings`,
+> `product_reviews` and `admin_users` **do not exist** (`PGRST205` from PostgREST).
+>
+> **Consequence right now: every product detail page is broken.** The PDP awaits
+> `getReviewsByProductId`, which throws because the table is missing, so the page
+> hits the error boundary. Confirmed over HTTP against a production build: the
+> response carries only the `<title>` from `generateMetadata` and an error digest,
+> with no product body. That is prompt 04 behaving exactly as specified — before
+> this prompt the same failure rendered a PDP with a silently empty reviews list.
+>
+> This resolves itself the moment migrations `000`–`004` are run (table below).
+> No further code change is needed for it.
+>
+> The wider lesson stands: prompts 01–03 gated green against a database that was
+> already unreachable, because every query swallowed its errors. Nothing before
+> prompt 04 can be treated as verified against real data.
+
 ## Phase 0 — Stabilise
 - [x] 01-schema-baseline-rls — **done**
 - [x] 02-lock-down-reviews — **done**
 - [x] 03-fix-revalidate — **done**
-- [ ] 04-error-handling
+- [x] 04-error-handling — **done**
 - [ ] 05-search-sanitise
 
 ## Phase 1 — Storefront rebuild
@@ -75,6 +96,7 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | Prompt | What I need |
 |---|---|
 | 01 | Run `000`, `001`, `003` in the Supabase SQL Editor, then insert the `admin_users` row (SQL above). Also: Authentication → Providers → Email → turn off *Enable signups*, and check Advisors → Security reports no missing RLS. Nothing later in the plan is blocked on this, but the live site keeps its old, unreviewed policies until it is done. |
+| **04** | ~~A reachable Supabase project.~~ **Resolved** — restored, gate is green again. But the restored database is missing `site_settings`, `product_reviews` and `admin_users`, so **every PDP currently serves an error page**. Running `000`–`004` (row above) fixes it. This is now the single highest-priority manual task. |
 | 02 | Add `REVIEW_IP_SALT` to the Vercel project (production + preview + development). I generated one into `.env.local` for local work; production needs its own. Any 32-byte hex value: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. Until it is set in Vercel, `POST /api/reviews` returns 503 by design rather than accepting unlimited unrate-limited submissions. Also run `004`. |
 
 ## Decisions and deviations
@@ -99,6 +121,10 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | 03 | Category writes invalidate the `products` tag as well as `categories`. | Product payloads embed `category:categories(*)`, so a category rename would otherwise still show the old name on cached PDPs and cards. |
 | 03 | `getCategoriesByLevel(_, true)` and `getChildCategories(_, true)` now filter the single cached "all active categories" read instead of issuing their own queries. | The home page called `getChildCategories` once per level-1 category. This collapses those into one cached read. Partial overlap with prompt 16, which owns the wider dedupe work. |
 | 03 | Split each dual-purpose query by its `activeOnly` argument rather than adding new function names. | `activeOnly` reads are anonymous and cacheable; the rest need an admin session to see inactive rows. Routing on the existing flag kept every call site unchanged. |
+| 04 | `assertOk` passes `data: null` straight through when `error` is also `null`, rather than treating null data as a failure. | This is the `maybeSingle()` "genuinely not found" case the prompt carves out. It is the one path where `null` may still reach a caller, and `notFound()` on it is now correct rather than a guess. |
+| 04 | Write helpers in `lib/queries/` no longer return `null` / `false` / `0` on failure — they throw and their return types narrowed accordingly. | The prompt says not to change return types "beyond removing the error-swallowing", and the sentinel return values *were* the error-swallowing. A caller can no longer confuse "rejected by RLS" with "validation failed". |
+| 04 | Wrapped the four catalogue server actions in `try/catch` and surfaced `DataError.message` through a `failureMessage()` helper. | Closes the deferred item from prompt 03: the admin now sees the actual Postgres reason instead of "Failed to save product". The actions are the correct place for it — they are the boundary between a throwing query layer and a UI that must not crash on a bad save. |
+| 04 | The admin boundary prints `error.message`; the storefront boundary prints only the digest. | Admins are trusted and need the reason; a customer-facing page must not leak schema or query internals. Next strips messages in production anyway, so the digest is the only usable handle for a report. |
 
 ## Verification notes
 
@@ -160,10 +186,36 @@ signed-in admin against live Supabase, and `003` has not been applied yet, so
 (`requireAdmin()` → `revalidateTag`), but I have not watched it happen.
 Re-check once the migrations are run.
 
+`04` — the acceptance criterion is "killing network access to Supabase produces
+an error page, not an empty catalogue and not a 404", and both halves of that
+got tested for real rather than reasoned about:
+
+- **The outage itself was the test.** With the project gone, `npm run build`
+  failed loudly on the catalogue read. Before this prompt the same conditions
+  produced a green build and a storefront serving an empty catalogue at HTTP 200.
+- **The missing `product_reviews` table is a live partial-failure test.** Against
+  a production build on real Supabase, the PDP now returns the error boundary
+  with a digest and no product body, and logs
+  `[DataError] reviews.byProduct … PGRST205` server-side. Previously it would
+  have rendered the product with an empty reviews section and said nothing.
+- A real product slug and a nonsense slug were checked separately to confirm the
+  `notFound()` path still means "not found" and not "the query failed".
+- `grep '} catch {'` under `lib/queries/` returns nothing.
+
+One caveat on the criterion, stated plainly: the error page is served with
+**HTTP 200, not 500**. Next 14 streams the document, so the status line and
+`<head>` are already flushed by the time the page component throws; the boundary
+is swapped in mid-stream. Nothing in this prompt can change that. It matters for
+uptime monitoring — a health check on status code alone will not see these
+failures. Flagged for 28b, which owns monitoring.
+
 ## Deferred
 
 | Issue | Which prompt should own it |
 |---|---|
+| `app/(storefront)/error.tsx` uses `v18-card` / `v18-text-heading` / `v18-text-muted`. That violates the storefront design rule outright. Left as-is because the storefront tokens it should use do not exist yet — 06 creates them. | 06-storefront-tokens / 07-storefront-shell-swap |
+| Storefront errors reach the browser as HTTP 200 because Next 14 has already flushed the stream. Any uptime check that only reads status codes will miss a total database failure. | 28b-ci-and-monitoring |
+| The home page renders its catalogue but shows "No products found." in the featured section — no row in the restored database has `is_featured = true`. Data, not code, but the empty state is worth a second look once real data is back. | 10-product-card |
 | Action failure messages are generic ("Could not update the product") because `createProduct` / `updateProduct` swallow the Postgres error and return `null`. The authorisation path does return specific messages. | 04-error-handling, which owns `lib/queries/` |
 | `getRelatedProducts` still makes up to five sequential round trips; it is now cached, not fixed. | 16-query-dedupe |
 | `components/storefront/ProductReviews.tsx` is a storefront component still using `v18-*` classes (`v18-card`, `v18-text-heading`, `v18-text-muted`, `border-v18-border`). Left alone deliberately — restyling it now would collide with the shell swap. | 07-storefront-shell-swap / 12a-pdp-layout |

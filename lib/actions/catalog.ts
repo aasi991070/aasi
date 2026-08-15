@@ -2,6 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/auth/admin";
+import { DataError } from "@/lib/errors";
 import {
   createCategory,
   deleteCategory,
@@ -39,6 +40,17 @@ function revalidateProduct(slugs: string[]) {
   revalidatePath("/category/[...slug]", "page");
 }
 
+/**
+ * The query layer throws `DataError` rather than returning null now, so the
+ * admin can be told what actually went wrong. This is an admin-only surface,
+ * so the underlying database message is useful rather than a leak; anything
+ * unrecognised gets a generic message.
+ */
+function failureMessage(error: unknown, fallback: string): string {
+  if (error instanceof DataError) return `${fallback} ${error.message}`;
+  return fallback;
+}
+
 function revalidateCategory() {
   revalidateTag("categories");
   // A category edit changes names and visibility inside product payloads too.
@@ -68,26 +80,29 @@ export async function saveProductAction(
     category_id: values.category_id || undefined,
   };
 
-  // Capture the old slug before updating. Renaming a product would otherwise
-  // leave the old PDP serving stale cached content under its previous tag.
-  const previousSlug = id ? (await getProductById(id))?.slug : undefined;
+  try {
+    // Capture the old slug before updating. Renaming a product would otherwise
+    // leave the old PDP serving stale cached content under its previous tag.
+    const previousSlug = id ? (await getProductById(id))?.slug : undefined;
 
-  const saved = id ? await updateProduct(id, data) : await createProduct(data);
+    const saved = id ? await updateProduct(id, data) : await createProduct(data);
 
-  if (!saved) {
+    const slugs = [saved.slug];
+    if (previousSlug && previousSlug !== saved.slug) slugs.push(previousSlug);
+    revalidateProduct(slugs);
+
+    return { ok: true, data: { id: saved.id, slug: saved.slug } };
+  } catch (error) {
     return {
       ok: false,
-      message: id
-        ? "Could not update the product. Your changes were not saved."
-        : "Could not create the product. Your changes were not saved.",
+      message: failureMessage(
+        error,
+        id
+          ? "Could not update the product. Your changes were not saved."
+          : "Could not create the product. Your changes were not saved."
+      ),
     };
   }
-
-  const slugs = [saved.slug];
-  if (previousSlug && previousSlug !== saved.slug) slugs.push(previousSlug);
-  revalidateProduct(slugs);
-
-  return { ok: true, data: { id: saved.id, slug: saved.slug } };
 }
 
 export async function deleteProductAction(
@@ -96,15 +111,18 @@ export async function deleteProductAction(
   const admin = await requireAdmin();
   if (!admin.ok) return { ok: false, message: admin.message };
 
-  const existing = await getProductById(id);
-  const deleted = await deleteProduct(id);
+  try {
+    const existing = await getProductById(id);
+    await deleteProduct(id);
 
-  if (!deleted) {
-    return { ok: false, message: "Could not delete the product." };
+    revalidateProduct(existing?.slug ? [existing.slug] : []);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return {
+      ok: false,
+      message: failureMessage(error, "Could not delete the product."),
+    };
   }
-
-  revalidateProduct(existing?.slug ? [existing.slug] : []);
-  return { ok: true, data: undefined };
 }
 
 export async function saveCategoryAction(
@@ -130,19 +148,24 @@ export async function saveCategoryAction(
     return { ok: false, message: "A category cannot be its own parent." };
   }
 
-  const saved = id ? await updateCategory(id, data) : await createCategory(data);
+  try {
+    const saved = id
+      ? await updateCategory(id, data)
+      : await createCategory(data);
 
-  if (!saved) {
+    revalidateCategory();
+    return { ok: true, data: { id: saved.id, slug: saved.slug } };
+  } catch (error) {
     return {
       ok: false,
-      message: id
-        ? "Could not update the category. Your changes were not saved."
-        : "Could not create the category. Your changes were not saved.",
+      message: failureMessage(
+        error,
+        id
+          ? "Could not update the category. Your changes were not saved."
+          : "Could not create the category. Your changes were not saved."
+      ),
     };
   }
-
-  revalidateCategory();
-  return { ok: true, data: { id: saved.id, slug: saved.slug } };
 }
 
 export async function deleteCategoryAction(
@@ -151,16 +174,20 @@ export async function deleteCategoryAction(
   const admin = await requireAdmin();
   if (!admin.ok) return { ok: false, message: admin.message };
 
-  const existing = await getCategoryById(id);
-  if (!existing) {
-    return { ok: false, message: "That category no longer exists." };
-  }
+  try {
+    const existing = await getCategoryById(id);
+    if (!existing) {
+      return { ok: false, message: "That category no longer exists." };
+    }
 
-  const deleted = await deleteCategory(id);
-  if (!deleted) {
-    return { ok: false, message: "Could not delete the category." };
-  }
+    await deleteCategory(id);
 
-  revalidateCategory();
-  return { ok: true, data: undefined };
+    revalidateCategory();
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return {
+      ok: false,
+      message: failureMessage(error, "Could not delete the category."),
+    };
+  }
 }

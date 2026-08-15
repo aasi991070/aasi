@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { REVALIDATE_SECONDS } from "@/constants";
+import { assertOk } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
 import type {
@@ -71,8 +72,7 @@ async function fetchCategories(
     query = query.eq("is_active", true);
   }
 
-  const { data, error } = await query;
-  if (error) throw error;
+  const data = assertOk("categories.list", await query);
   return (data ?? []) as Category[];
 }
 
@@ -82,110 +82,87 @@ const getCachedActiveCategories = cachedCategoryQuery(
 );
 
 export async function getCategoryTree(activeOnly = false): Promise<Category[]> {
-  try {
-    const categories = activeOnly
-      ? await getCachedActiveCategories()
-      : await fetchCategories(false, false);
-    return buildTree(categories);
-  } catch {
-    return [];
-  }
+  const categories = activeOnly
+    ? await getCachedActiveCategories()
+    : await fetchCategories(false, false);
+  return buildTree(categories);
 }
 
 export async function getAllCategories(activeOnly = false): Promise<Category[]> {
-  try {
-    return activeOnly
-      ? await getCachedActiveCategories()
-      : await fetchCategories(false, false);
-  } catch {
-    return [];
-  }
+  return activeOnly
+    ? getCachedActiveCategories()
+    : fetchCategories(false, false);
 }
 
 export async function getCategoriesByLevel(
   level: 1 | 2 | 3 | 4,
   activeOnly = false
 ): Promise<Category[]> {
-  try {
-    if (activeOnly) {
-      const all = await getCachedActiveCategories();
-      return all.filter((c) => c.level === level);
-    }
+  if (activeOnly) {
+    const all = await getCachedActiveCategories();
+    return all.filter((c) => c.level === level);
+  }
 
-    const supabase = await createClient();
-    const { data, error } = await supabase
+  const supabase = await createClient();
+  const data = assertOk(
+    "categories.byLevel",
+    await supabase
       .from("categories")
       .select("*")
       .eq("level", level)
-      .order("sort_order", { ascending: true });
+      .order("sort_order", { ascending: true })
+  );
 
-    if (error) throw error;
-    return (data ?? []) as Category[];
-  } catch {
-    return [];
-  }
+  return (data ?? []) as Category[];
 }
 
 export async function getCategoryBySlug(
   slug: string
 ): Promise<Category | null> {
-  try {
-    return await cachedCategoryQuery("categories:by-slug", async (s: string) => {
-      const supabase = createPublicClient();
-      const { data, error } = await supabase
-        .from("categories")
-        .select("*")
-        .eq("slug", s)
-        .maybeSingle();
+  return cachedCategoryQuery("categories:by-slug", async (s: string) => {
+    const supabase = createPublicClient();
+    const data = assertOk(
+      "categories.bySlug",
+      await supabase.from("categories").select("*").eq("slug", s).maybeSingle()
+    );
 
-      if (error) throw error;
-      return data as Category | null;
-    })(slug);
-  } catch {
-    return null;
-  }
+    // Genuinely absent, not a failure.
+    return data as Category | null;
+  })(slug);
 }
 
 export async function getCategoryById(id: string): Promise<Category | null> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("categories")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
+  const supabase = await createClient();
+  const data = assertOk(
+    "categories.byId",
+    await supabase.from("categories").select("*").eq("id", id).maybeSingle()
+  );
 
-    if (error) throw error;
-    return data as Category | null;
-  } catch {
-    return null;
-  }
+  return data as Category | null;
 }
 
 export async function getChildCategories(
   parentId: string,
   activeOnly = false
 ): Promise<Category[]> {
-  try {
-    if (activeOnly) {
-      // Filtered from the one cached read rather than a query per parent —
-      // the home page calls this once per level-1 category.
-      const all = await getCachedActiveCategories();
-      return all.filter((c) => c.parent_id === parentId);
-    }
+  if (activeOnly) {
+    // Filtered from the one cached read rather than a query per parent —
+    // the home page calls this once per level-1 category.
+    const all = await getCachedActiveCategories();
+    return all.filter((c) => c.parent_id === parentId);
+  }
 
-    const supabase = await createClient();
-    const { data, error } = await supabase
+  const supabase = await createClient();
+  const data = assertOk(
+    "categories.children",
+    await supabase
       .from("categories")
       .select("*")
       .eq("parent_id", parentId)
-      .order("sort_order", { ascending: true });
+      .order("sort_order", { ascending: true })
+  );
 
-    if (error) throw error;
-    return (data ?? []) as Category[];
-  } catch {
-    return [];
-  }
+  return (data ?? []) as Category[];
 }
 
 export async function getCategoryBreadcrumb(
@@ -225,82 +202,64 @@ export async function getDescendantCategoryIds(
 
 export async function createCategory(
   data: CategoryFormData
-): Promise<Category | null> {
-  try {
-    const supabase = await createClient();
-    const { data: created, error } = await supabase
-      .from("categories")
-      .insert(data)
-      .select()
-      .single();
+): Promise<Category> {
+  const supabase = await createClient();
+  const created = assertOk(
+    "categories.create",
+    await supabase.from("categories").insert(data).select().single()
+  );
 
-    if (error) throw error;
-    return created as Category;
-  } catch {
-    return null;
-  }
+  return created as Category;
 }
 
 export async function updateCategory(
   id: string,
   data: Partial<CategoryFormData>
-): Promise<Category | null> {
-  try {
-    const supabase = await createClient();
-    const { data: updated, error } = await supabase
+): Promise<Category> {
+  const supabase = await createClient();
+  const updated = assertOk(
+    "categories.update",
+    await supabase
       .from("categories")
       .update({ ...data, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select()
-      .single();
+      .single()
+  );
 
-    if (error) throw error;
-    return updated as Category;
-  } catch {
-    return null;
-  }
+  return updated as Category;
 }
 
-export async function deleteCategory(id: string): Promise<boolean> {
-  try {
-    const supabase = await createClient();
-    const { error } = await supabase.from("categories").delete().eq("id", id);
-    if (error) throw error;
-    return true;
-  } catch {
-    return false;
-  }
+export async function deleteCategory(id: string): Promise<void> {
+  const supabase = await createClient();
+  assertOk(
+    "categories.delete",
+    await supabase.from("categories").delete().eq("id", id)
+  );
 }
 
 export async function updateCategorySortOrder(
   items: { id: string; sort_order: number }[]
-): Promise<boolean> {
-  try {
-    const supabase = await createClient();
-    await Promise.all(
-      items.map(({ id, sort_order }) =>
-        supabase
-          .from("categories")
-          .update({ sort_order, updated_at: new Date().toISOString() })
-          .eq("id", id)
-      )
-    );
-    return true;
-  } catch {
-    return false;
-  }
+): Promise<void> {
+  const supabase = await createClient();
+  const results = await Promise.all(
+    items.map(({ id, sort_order }) =>
+      supabase
+        .from("categories")
+        .update({ sort_order, updated_at: new Date().toISOString() })
+        .eq("id", id)
+    )
+  );
+
+  results.forEach((result) => assertOk("categories.reorder", result));
 }
 
 export async function getCategoryCount(): Promise<number> {
-  try {
-    const supabase = await createClient();
-    const { count, error } = await supabase
-      .from("categories")
-      .select("*", { count: "exact", head: true });
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("categories")
+    .select("*", { count: "exact", head: true });
 
-    if (error) throw error;
-    return count ?? 0;
-  } catch {
-    return 0;
-  }
+  assertOk("categories.count", { data: count, error });
+  return count ?? 0;
 }

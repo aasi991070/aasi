@@ -1,3 +1,4 @@
+import { assertOk } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { ProductReview, ReviewSummary } from "@/types";
@@ -20,20 +21,18 @@ function isMissingTableError(error: { code?: string; message?: string }) {
 export async function getReviewsByProductId(
   productId: string
 ): Promise<ProductReview[]> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+  const supabase = await createClient();
+  const data = assertOk(
+    "reviews.byProduct",
+    await supabase
       .from("product_reviews")
       .select(PUBLIC_REVIEW_COLUMNS)
       .eq("product_id", productId)
       .eq("status", "approved")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+  );
 
-    if (error) throw error;
-    return (data ?? []) as ProductReview[];
-  } catch {
-    return [];
-  }
+  return (data ?? []) as ProductReview[];
 }
 
 export async function getReviewSummary(

@@ -63,7 +63,13 @@ async function getSettingsFromStorage(): Promise<SiteSettings> {
     const text = await data.text();
     const parsed = JSON.parse(text) as Partial<SiteSettings>;
     return normalizeSettings(parsed);
-  } catch {
+  } catch (error) {
+    // Deliberate fallback — the site must still render with default copy —
+    // but never a silent one.
+    console.error(
+      "[settings] storage fallback failed, using built-in defaults",
+      error
+    );
     return DEFAULT_SETTINGS;
   }
 }
@@ -90,6 +96,12 @@ async function saveSettingsToStorage(
 const SETTINGS_SELECT =
   "monochrome_enabled, hero_title, hero_subtitle, hero_cta_label, hero_cta_href, hero_image_url";
 
+/**
+ * The one query allowed to fall back instead of throwing: site chrome must
+ * render even when settings are unavailable, and every field has a sane
+ * default. The fallback is logged with its reason so it is visible rather than
+ * silent.
+ */
 async function fetchSiteSettingsUncached(): Promise<SiteSettings> {
   try {
     const supabase = await createClient();
@@ -101,6 +113,10 @@ async function fetchSiteSettingsUncached(): Promise<SiteSettings> {
 
     if (error) {
       if (isMissingTableError(error)) {
+        console.warn(
+          "[settings] site_settings table missing, falling back to storage",
+          error.message
+        );
         return getSettingsFromStorage();
       }
       throw error;
@@ -109,7 +125,11 @@ async function fetchSiteSettingsUncached(): Promise<SiteSettings> {
     if (!data) return DEFAULT_SETTINGS;
 
     return normalizeSettings(data as Partial<SiteSettings>);
-  } catch {
+  } catch (error) {
+    console.error(
+      "[settings] read failed, falling back to storage",
+      error
+    );
     return getSettingsFromStorage();
   }
 }
