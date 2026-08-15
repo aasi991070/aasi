@@ -35,7 +35,7 @@ export function V18TopNav({
   showAdminLink = true,
 }: V18TopNavProps) {
   const pathname = usePathname();
-  const { sidebarOpen, toggleSidebar } = useUiStore();
+  const { toggleSidebar } = useUiStore();
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-v18-border bg-white px-6 shadow-sm">

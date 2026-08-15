@@ -31,7 +31,6 @@ import { Button } from "@/components/ui/button";
 import { CATEGORY_LEVELS } from "@/constants";
 import { useDeleteCategory, useReorderCategories } from "@/hooks/useCategories";
 import { useUiStore } from "@/hooks/useUiStore";
-import { cn } from "@/lib/utils/cn";
 import type { Category } from "@/types";
 
 interface CategoryTreeViewProps {

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { REVALIDATE_SECONDS } from "@/constants";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Hero } from "@/components/storefront/Hero";
 import { ProductGrid } from "@/components/storefront/ProductGrid";
