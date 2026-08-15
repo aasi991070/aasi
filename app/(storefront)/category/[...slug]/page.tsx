@@ -94,27 +94,31 @@ export default async function CategoryPage({
   );
 
   return (
-    <>
+    <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
+      {/* `onGradient` styling was white text for the old blue shell. */}
+      <CategoryBreadcrumb items={breadcrumb} />
+
       <PageHeader title={category.name} />
       {descriptionParagraphs.length > 0 && (
-        <div className="mb-6 -mt-4 space-y-2">
+        <div className="-mt-4 mb-6 space-y-2">
           {descriptionParagraphs.map((para, i) => (
-            <p key={i} className="text-sm v18-text-muted-on-gradient">
+            <p key={i} className="text-sm text-store-ink-muted">
               {para}
             </p>
           ))}
         </div>
       )}
-      <CategoryBreadcrumb items={breadcrumb} onGradient />
 
       <div className="mt-6 flex gap-8">
-        <Suspense fallback={<Skeleton className="v18-card hidden h-96 w-56 lg:block" />}>
+        <Suspense
+          fallback={<Skeleton className="hidden h-96 w-56 lg:block" />}
+        >
           <CategoryFilter availableColors={availableColors} />
         </Suspense>
         <div className="flex-1 pb-24">
           <ProductGrid products={products} />
         </div>
       </div>
-    </>
+    </div>
   );
 }

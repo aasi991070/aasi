@@ -27,7 +27,7 @@ export default async function SearchPage({
     productResults.length > 0 || categoryResults.length > 0;
 
   return (
-    <>
+    <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
       <PageHeader
         title={query ? `Results for "${query}"` : "Search"}
         subtitle={
@@ -43,22 +43,24 @@ export default async function SearchPage({
       />
 
       {!query && (
-        <div className="v18-card py-16 text-center">
-          <p className="text-sm v18-text-muted">Enter a search term above.</p>
+        <div className="store-hairline bg-store-white py-16 text-center">
+          <p className="text-sm text-store-ink-muted">
+            Enter a search term above.
+          </p>
         </div>
       )}
 
       {query && !hasResults && (
-        <div className="v18-card py-16 text-center">
-          <p className="text-sm v18-text-muted">
+        <div className="store-hairline bg-store-white py-16 text-center">
+          <p className="text-sm text-store-ink-muted">
             No products or categories match &quot;{query}&quot;.
           </p>
         </div>
       )}
 
       {categoryResults.length > 0 && (
-        <section className="mb-8">
-          <h2 className="mb-4 text-lg font-semibold v18-text-on-gradient">
+        <section className="mb-12">
+          <h2 className="mb-6 font-display text-2xl font-normal text-store-ink">
             Categories
           </h2>
           <ul className="grid gap-3 md:grid-cols-2">
@@ -66,13 +68,13 @@ export default async function SearchPage({
               <li key={category.id}>
                 <Link
                   href={href}
-                  className="v18-card block p-4 transition-shadow hover:shadow-lg"
+                  className="store-hairline block bg-store-white p-4 transition-colors hover:border-store-accent"
                 >
-                  <p className="font-medium v18-text-heading">
+                  <p className="font-medium text-store-ink">
                     <HighlightText text={category.name} tokens={tokens} />
                   </p>
                   {category.description && (
-                    <p className="mt-1 text-sm v18-text-muted line-clamp-2">
+                    <p className="mt-1 line-clamp-2 text-sm text-store-ink-muted">
                       <HighlightText
                         text={category.description}
                         tokens={tokens}
@@ -88,7 +90,7 @@ export default async function SearchPage({
 
       {productResults.length > 0 && (
         <section>
-          <h2 className="mb-4 text-lg font-semibold v18-text-on-gradient">
+          <h2 className="mb-6 font-display text-2xl font-normal text-store-ink">
             Products
           </h2>
           <div className="space-y-4">
@@ -104,6 +106,6 @@ export default async function SearchPage({
           </div>
         </section>
       )}
-    </>
+    </div>
   );
 }

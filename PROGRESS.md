@@ -32,7 +32,7 @@ Branch: remediation · Started: 16 Aug 2026
 
 ## Phase 1 — Storefront rebuild
 - [x] 06-storefront-tokens — **done**
-- [ ] 07-storefront-shell-swap
+- [x] 07-storefront-shell-swap — **done**
 - [ ] 08-navbar-rebuild
 - [ ] 09a-footer
 - [ ] 09b-static-pages
@@ -135,6 +135,13 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | 06 | `--font-logo` is redeclared on `body` rather than written as `var(--font-display)` inside `@theme`. | The obvious version silently fails: a custom property whose value contains `var()` resolves where it is *declared*, so at `:root` it captures the Georgia fallback before next/font's class on `<body>` supplies Cormorant. Caught in the browser — the utility was computing to Georgia. Declaring it on `body` resolves it against the real family. |
 | 06 | No hand-written `.font-display` utility in `@layer utilities`. | Redundant on Tailwind v4: a `--font-display` entry in `@theme` already generates `.font-display { font-family: var(--font-display) }`. Writing it twice would be two sources of truth for one class. Verified the utility exists and computes to Cormorant. |
 | 06 | The reduced-motion block targets `[class^="store-"], [class*=" store-"]` instead of listing each utility. | Later prompts add more `store-*` utilities and would have to remember to update a hand-maintained list. The selector matches only class tokens that *begin* with `store-`, so `text-store-ink` and friends are untouched — confirmed the v18 card keeps its own transition under emulated reduced motion. |
+| 07 | Flipped `PageHeader`'s default variant from `onGradient` to `default`. | Removing the blue gradient turned every unqualified `PageHeader` into white-on-off-white — invisible headings on the home page, PDP, search and category. All seven admin call sites pass `variant="onGradient"` explicitly, so the default was only ever load-bearing for the storefront. One line fixes every storefront call site, including the two in `components/storefront/` this prompt does not otherwise touch. The component's palette is still v18; prompt 12c owns that. |
+| 07 | Dropped the `variant` prop from `V18Shell` entirely rather than keeping `variant="admin"`. | With the storefront branch gone it was a single-valued discriminator — it could only ever be `"admin"`. `ADMIN_NAV_ITEMS` is now imported directly and `brandHref` defaults to `/admin/dashboard`. |
+| 07 | Split `V18Sidebar`'s nav into an inner `NavList` and added a second, separate `mobileNavOpen` flag to the UI store. | The desktop rail and the mobile drawer are different affordances — one collapses in place, the other overlays — so sharing `sidebarOpen` for both would make "open" mean two things. `NavList` renders identically in each. The top-nav button is likewise two buttons, `lg:hidden` and `hidden lg:block`, rather than one that branches on measured width, which keeps it working before hydration. |
+| 07 | Added `pt-20` to the storefront `<main>`. | `Navbar` is `fixed` and 80px tall, so the first section rendered underneath it. Prompt 08 rebuilds the navbar as sticky per the design rule, which reserves its own space — remove this offset then. |
+| 07 | Restyled more than the six lines the prompt lists. | The prompt names `error.tsx`, `loading.tsx`, `not-found.tsx`, `category:102` and `search:61,91`, but `v18-` also appeared at `search.tsx` 46, 52, 53, 69, 71, 75 and `category` 111. The acceptance criterion is a clean grep, so all of them had to go. Also dropped `onGradient` from `CategoryBreadcrumb` at the category call site — same white-text problem. |
+| 07 | `not-found.tsx` no longer uses `PageHeader`. | It was rendering a `PageHeader` *and* a duplicate paragraph of near-identical copy, which also produced a second `<h1>`. Plain markup is shorter and leaves the page with exactly one heading. Partial overlap with prompt 13, which owns the wider heading-hierarchy fix. |
+| 07 | Added `aria-current="page"` to the active admin nav link. | It was styled as active but not announced as such. One attribute, and I was rewriting the element anyway. |
 | 05 | Vitest config is `vitest.config.mts`, not `.ts`. | Vitest does not read tsconfig `paths`, so the `@/` alias has to be redeclared or nothing under test resolves. `.mts` avoids a Vite warning about ESM syntax in a file loaded as CommonJS. Also added `test:watch`. |
 
 ## Verification notes
@@ -257,10 +264,37 @@ stylesheet:
 declares a relative image URL yet, so there is nothing for it to resolve. It
 becomes load-bearing in 20 and 21.
 
+`07` — verified in a browser against a production build, at both 375px and
+1280px, and signed into the admin for real:
+
+- Storefront: no sidebar, no bell, no avatar, no breadcrumb, no `/admin` link on
+  any page. Skip-to-content is the first focusable element. The footer renders
+  for the first time — it had never been mounted anywhere.
+- 375px storefront: `document.scrollWidth === clientWidth === 375`, no
+  horizontal overflow. (145 elements extend past the viewport, but every one is
+  inside an `overflow-x` carousel, so the page itself does not scroll sideways.)
+- Admin needed a real session to check, so I created a throwaway Supabase user,
+  signed in through the login form, verified, then deleted the user via the
+  admin API and confirmed a 404 on lookup. Nothing left behind.
+- 375px admin: `aside` is `display: none`, content wrapper `margin-left: 0`,
+  `main` is the full 375px, no overflow. The drawer opens from the menu button
+  with the full labelled nav, an accessible "Admin navigation" title and a close
+  button, and closes on navigation.
+- 1280px admin: rail expands to 240px with labels, content offset 240px, toggle
+  collapses it to 64px. Note the expand-on-mount is driven by a `matchMedia`
+  listener that CDP's device-metrics override does not fire a `change` event
+  for — it works on mount and on a real resize, so verify by remounting rather
+  than by emulating a resize if you retest this.
+- `grep v18- app/(storefront)/` returns nothing.
+
 ## Deferred
 
 | Issue | Which prompt should own it |
 |---|---|
+| The home page hero headline is still white on off-white, so it is invisible. Prompt 12c names this exact line (`Hero.tsx:32`, `v18-text-on-gradient`) and owns the fix. Left alone deliberately rather than half-fixing a file 12c rewrites. | 12c-remaining-storefront-surfaces |
+| `PageHeader` still renders v18 colours and always emits an `<h1>`, so the home page has four. Only the visibility was fixed here. | 12c-remaining-storefront-surfaces, then 13-accessibility |
+| Admin login does not redirect to the dashboard on success — the session is created and the dashboard is reachable, but the form stays put. Pre-existing, unrelated to this prompt, and noticed only because I signed in to test the drawer. | flagged; no prompt owns it — worth a look during 27a |
+| Supabase **public signup is still enabled** — I created a working account against the live project with nothing but the anon-side admin API. Already on the list for prompt 01, restating because I have now confirmed it rather than assumed it. | flagged for Arif |
 | `BrandMark.tsx` asks for `font-extrabold` at `tracking-[0.18em]`, but Cormorant is loaded at 300/400/500 only, so the wordmark renders synthetically bolded. The token now at least points at a brand family instead of nothing; the right fix is to restyle the mark. | 08-navbar-rebuild |
 | The storefront still renders the admin shell — the home page has a sidebar toggle, a notification bell and a public `/admin` link, and `BrandMark` is not mounted at all. Expected at this stage; tokens exist now but nothing consumes them. | 07-storefront-shell-swap |
 | `NEXT_PUBLIC_SITE_URL` is set to `http://localhost:3000` locally. Production needs the real origin in Vercel or every canonical and Open Graph URL will point at localhost. | flagged for Arif; see "Blocked on Arif" |

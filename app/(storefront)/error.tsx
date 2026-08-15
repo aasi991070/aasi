@@ -21,11 +21,11 @@ export default function StorefrontError({
   }, [error]);
 
   return (
-    <div className="v18-card flex min-h-[40vh] flex-col items-center justify-center px-6 py-16 text-center">
-      <h2 className="text-xl font-semibold v18-text-heading">
+    <div className="mx-auto flex min-h-[40vh] max-w-7xl flex-col items-center justify-center px-6 py-24 text-center lg:px-8">
+      <h2 className="font-display text-3xl font-light tracking-tight text-store-ink">
         We couldn&apos;t load this page
       </h2>
-      <p className="mt-4 max-w-md text-sm v18-text-muted">
+      <p className="mt-4 max-w-md text-sm text-store-ink-muted">
         Something went wrong on our side, not yours. The page may load correctly
         if you try again in a moment.
       </p>
@@ -40,7 +40,7 @@ export default function StorefrontError({
       </div>
 
       {error.digest && (
-        <p className="mt-8 text-xs v18-text-muted">
+        <p className="mt-8 text-xs text-store-ink-muted">
           Reference: <code className="font-mono">{error.digest}</code>
         </p>
       )}

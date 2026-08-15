@@ -11,7 +11,11 @@ interface PageHeaderProps {
 export function PageHeader({
   title,
   subtitle,
-  variant = "onGradient",
+  // Defaults to dark-on-light. `onGradient` is white text, which only works on
+  // the admin blue shell — every admin call site opts into it explicitly. The
+  // storefront no longer has a gradient, so inheriting it rendered invisible
+  // headings.
+  variant = "default",
   action,
   className,
 }: PageHeaderProps) {

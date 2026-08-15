@@ -25,5 +25,5 @@ export default async function AdminCmsLayout({
     redirect("/admin/login");
   }
 
-  return <V18Shell variant="admin">{children}</V18Shell>;
+  return <V18Shell>{children}</V18Shell>;
 }

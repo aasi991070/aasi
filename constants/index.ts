@@ -4,10 +4,6 @@ import {
   Package,
   FolderTree,
   Settings,
-  Home,
-  ShoppingBag,
-  Shirt,
-  Footprints,
 } from "lucide-react";
 
 export const STORAGE_BUCKET = "product-images";
@@ -57,33 +53,6 @@ export interface NavItem {
 
 /** @deprecated Use NavItem */
 export type AdminNavItem = NavItem;
-
-export const STOREFRONT_NAV_ITEMS: NavItem[] = [
-  {
-    section: "Shop",
-    label: "Home",
-    href: "/",
-    icon: Home,
-  },
-  {
-    section: "Shop",
-    label: "Men",
-    href: "/category/mens",
-    icon: Shirt,
-  },
-  {
-    section: "Shop",
-    label: "Women",
-    href: "/category/womens",
-    icon: ShoppingBag,
-  },
-  {
-    section: "Shop",
-    label: "Footwear",
-    href: "/category/mens/footwear",
-    icon: Footprints,
-  },
-];
 
 export const ADMIN_NAV_ITEMS: NavItem[] = [
   {
