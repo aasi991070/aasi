@@ -1,14 +1,102 @@
 import { STORAGE_BUCKET } from "@/constants";
-import { createClient } from "@/lib/supabase/client";
 
-function sanitizeFilename(name: string): string {
-  return name.replace(/[^a-zA-Z0-9.-]/g, "-").toLowerCase();
+export const PLACEHOLDER_IMAGE =
+  "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&q=80";
+
+function getSupabaseBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") ?? "";
+}
+
+function encodeStoragePath(path: string): string {
+  return path
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+}
+
+/** Strip bucket prefixes and extract storage paths from full Supabase URLs. */
+export function normalizeStoragePath(path: string): string {
+  let normalized = path.trim().replace(/^\/+/, "");
+
+  const publicMarker = `/storage/v1/object/public/${STORAGE_BUCKET}/`;
+  const publicIndex = normalized.indexOf(publicMarker);
+  if (publicIndex !== -1) {
+    normalized = normalized.slice(publicIndex + publicMarker.length);
+  }
+
+  if (normalized.startsWith(`${STORAGE_BUCKET}/`)) {
+    normalized = normalized.slice(STORAGE_BUCKET.length + 1);
+  }
+
+  return normalized.split("?")[0]?.split("#")[0] ?? "";
+}
+
+export function isSupabaseStorageUrl(url: string): boolean {
+  const baseUrl = getSupabaseBaseUrl();
+  if (!baseUrl || !url.startsWith(baseUrl)) return false;
+  return url.includes(`/storage/v1/object/public/${STORAGE_BUCKET}/`);
+}
+
+export function getPublicUrl(path: string | null | undefined): string {
+  if (!path?.trim()) return "";
+
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    if (isSupabaseStorageUrl(path)) {
+      const storagePath = normalizeStoragePath(path);
+      if (!storagePath) return path;
+      const baseUrl = getSupabaseBaseUrl();
+      if (!baseUrl) return path;
+      return `${baseUrl}/storage/v1/object/public/${STORAGE_BUCKET}/${encodeStoragePath(storagePath)}`;
+    }
+    return path;
+  }
+
+  const storagePath = normalizeStoragePath(path);
+  if (!storagePath) return "";
+
+  const baseUrl = getSupabaseBaseUrl();
+  if (!baseUrl) return "";
+
+  return `${baseUrl}/storage/v1/object/public/${STORAGE_BUCKET}/${encodeStoragePath(storagePath)}`;
+}
+
+export function resolveImageUrl(path?: string | null): string {
+  const url = getPublicUrl(path);
+  return url || PLACEHOLDER_IMAGE;
+}
+
+export function getProductImagePaths(product: {
+  images?: string[] | null;
+  thumbnail_url?: string | null;
+}): string[] {
+  const images = Array.isArray(product.images)
+    ? product.images.filter(Boolean)
+    : [];
+
+  if (images.length > 0) return images;
+
+  if (product.thumbnail_url?.trim()) {
+    return [product.thumbnail_url];
+  }
+
+  return [];
+}
+
+export function resolveProductImageList(product: {
+  images?: string[] | null;
+  thumbnail_url?: string | null;
+}): string[] {
+  const paths = getProductImagePaths(product);
+  if (!paths.length) return [PLACEHOLDER_IMAGE];
+  return paths.map((path) => resolveImageUrl(path));
 }
 
 export async function uploadImage(
   file: File,
   folder: string
 ): Promise<string> {
+  const { createClient } = await import("@/lib/supabase/client");
   const supabase = createClient();
   const ext = file.name.split(".").pop() ?? "jpg";
   const path = `${folder}/${crypto.randomUUID()}-${sanitizeFilename(file.name.replace(`.${ext}`, ""))}.${ext}`;
@@ -22,27 +110,15 @@ export async function uploadImage(
 }
 
 export async function deleteImage(path: string): Promise<void> {
+  const { createClient } = await import("@/lib/supabase/client");
   const supabase = createClient();
-  const { error } = await supabase.storage.from(STORAGE_BUCKET).remove([path]);
+  const storagePath = normalizeStoragePath(path);
+  const { error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .remove([storagePath]);
   if (error) throw error;
 }
 
-export function getPublicUrl(path: string | null | undefined): string {
-  if (!path?.trim()) return "";
-  if (path.startsWith("http://") || path.startsWith("https://")) {
-    return path;
-  }
-
-  const supabase = createClient();
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
-}
-
-const PLACEHOLDER_IMAGE =
-  "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&q=80";
-
-export function resolveImageUrl(path?: string | null): string {
-  if (!path?.trim()) return PLACEHOLDER_IMAGE;
-  if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  return getPublicUrl(path);
+function sanitizeFilename(name: string): string {
+  return name.replace(/[^a-zA-Z0-9.-]/g, "-").toLowerCase();
 }

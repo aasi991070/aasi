@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Pencil, Trash2 } from "lucide-react";
+import { RemoteImage } from "@/components/shared/RemoteImage";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatPrice } from "@/lib/utils/formatPrice";
-import { getPublicUrl } from "@/lib/storage/images";
+import { getProductImagePaths, resolveImageUrl } from "@/lib/storage/images";
 import type { Product } from "@/types";
 
 interface ProductTableProps {
@@ -38,20 +38,15 @@ export function ProductTable({ products, onDelete }: ProductTableProps) {
         </TableHeader>
         <TableBody>
           {products.map((product) => {
-            const imagePath = product.thumbnail_url || product.images[0];
-            const imageUrl =
-              imagePath?.startsWith("http")
-                ? imagePath
-                : imagePath
-                  ? getPublicUrl(imagePath)
-                  : null;
+            const imagePath = getProductImagePaths(product)[0];
+            const imageUrl = imagePath ? resolveImageUrl(imagePath) : null;
 
             return (
               <TableRow key={product.id} className="hover:bg-slate-50">
                 <TableCell>
                   <div className="relative size-10 overflow-hidden rounded-md bg-slate-100">
                     {imageUrl ? (
-                      <Image
+                      <RemoteImage
                         src={imageUrl}
                         alt={product.name}
                         fill

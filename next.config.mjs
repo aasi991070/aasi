@@ -20,6 +20,7 @@ const nextConfig = {
         hostname: "images.unsplash.com",
       },
     ],
+    minimumCacheTTL: 86400,
   },
 };
 

@@ -52,7 +52,11 @@ export function ProductDetailClient({
       <PageHeader title={product.name} subtitle={product.category?.name} />
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <ProductImageGallery images={product.images} productName={product.name} />
+        <ProductImageGallery
+          images={product.images}
+          thumbnailUrl={product.thumbnail_url}
+          productName={product.name}
+        />
 
         <div className="v18-card p-6 lg:p-8">
           <CategoryBreadcrumb items={breadcrumb} />

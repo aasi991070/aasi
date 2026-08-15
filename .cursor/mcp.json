@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "lottiefiles-creator": {
+      "command": "npx",
+      "args": ["-y", "@lottiefiles/creator-mcp@latest"]
+    },
+    "lottiefiles-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-mcp-server-lottiefiles-junmer"]
+    }
+  }
+}

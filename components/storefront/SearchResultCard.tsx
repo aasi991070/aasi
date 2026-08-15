@@ -1,7 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
+import { RemoteImage } from "@/components/shared/RemoteImage";
+import { getProductImagePaths, resolveImageUrl } from "@/lib/storage/images";
 import { formatPrice } from "@/lib/utils/formatPrice";
-import { getPublicUrl } from "@/lib/storage/images";
 import { HighlightText } from "@/lib/utils/highlightText";
 import { excerptAroundMatch, tokenizeQuery } from "@/lib/utils/searchText";
 import { getCategoryBreadcrumbPath, getCategoryHref } from "@/lib/utils/getGenderCategory";
@@ -21,12 +21,8 @@ export function SearchResultCard({
   allCategories,
 }: SearchResultCardProps) {
   const tokens = tokenizeQuery(query);
-  const imagePath = product.thumbnail_url ?? product.images[0];
-  const imageUrl = imagePath?.startsWith("http")
-    ? imagePath
-    : imagePath
-      ? getPublicUrl(imagePath)
-      : null;
+  const imagePath = getProductImagePaths(product)[0];
+  const imageUrl = imagePath ? resolveImageUrl(imagePath) : null;
 
   const categoryPath = getCategoryBreadcrumbPath(
     product.category_id,
@@ -41,7 +37,7 @@ export function SearchResultCard({
         className="relative size-24 shrink-0 overflow-hidden rounded-lg bg-slate-100"
       >
         {imageUrl && (
-          <Image
+          <RemoteImage
             src={imageUrl}
             alt={product.name}
             fill

@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import Image from "next/image";
 import { Upload, X } from "lucide-react";
+import { RemoteImage } from "@/components/shared/RemoteImage";
 import { Button } from "@/components/ui/button";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { cn } from "@/lib/utils/cn";
@@ -99,7 +99,7 @@ export function ImageUploader({
               key={path}
               className="group relative aspect-square overflow-hidden rounded-lg bg-slate-100"
             >
-              <Image
+              <RemoteImage
                 src={toPublicUrl(path)}
                 alt="Uploaded"
                 fill

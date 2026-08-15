@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import { RemoteImage } from "@/components/shared/RemoteImage";
 import { getPublicUrl } from "@/lib/storage/images";
 
 interface HeroProps {
@@ -37,7 +37,7 @@ export function Hero({
 
       <div className="v18-card overflow-hidden p-0">
         <div className="relative aspect-[21/9] min-h-[280px]">
-          <Image
+          <RemoteImage
             src={resolvedImageUrl}
             alt="Hero"
             fill

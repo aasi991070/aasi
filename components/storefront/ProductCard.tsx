@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
+import { RemoteImage } from "@/components/shared/RemoteImage";
+import { resolveImageUrl, getProductImagePaths } from "@/lib/storage/images";
 import { formatPrice } from "@/lib/utils/formatPrice";
-import { getPublicUrl } from "@/lib/storage/images";
 import type { Product } from "@/types";
 
 interface ProductCardProps {
@@ -12,12 +12,8 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const imagePath = product.thumbnail_url ?? product.images[0];
-  const imageUrl = imagePath?.startsWith("http")
-    ? imagePath
-    : imagePath
-      ? getPublicUrl(imagePath)
-      : "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=600&q=80";
+  const imagePath = getProductImagePaths(product)[0];
+  const imageUrl = resolveImageUrl(imagePath);
 
   const hasSale = product.sale_price != null && product.sale_price < product.price;
 
@@ -33,7 +29,7 @@ export function ProductCard({ product }: ProductCardProps) {
             }}
             transition={{ duration: 0.4, ease: "easeOut" }}
           >
-            <Image
+            <RemoteImage
               src={imageUrl}
               alt={product.name}
               fill
