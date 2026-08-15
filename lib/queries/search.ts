@@ -2,9 +2,12 @@ import { assertOk } from "@/lib/errors";
 import { createClient } from "@/lib/supabase/server";
 import { getAllCategories } from "@/lib/queries/categories";
 import {
+  buildIlikeOrFilter,
   buildProductSearchText,
+  CATEGORY_SEARCH_FIELDS,
   getMatchedFields,
   matchesAllTokens,
+  PRODUCT_SEARCH_FIELDS,
   tokenizeQuery,
 } from "@/lib/utils/searchText";
 import { getCategoryHref, getCategoryBreadcrumbPath } from "@/lib/utils/getGenderCategory";
@@ -43,16 +46,7 @@ export async function searchProducts(
       .from("products")
       .select("*, category:categories(*)")
       .eq("is_active", true)
-      .or(
-        [
-          ...tokens.flatMap((t) => [
-            `name.ilike.%${t}%`,
-            `slug.ilike.%${t}%`,
-            `description.ilike.%${t}%`,
-            `gender.ilike.%${t}%`,
-          ]),
-        ].join(",")
-      )
+      .or(buildIlikeOrFilter(tokens, PRODUCT_SEARCH_FIELDS))
       .order("created_at", { ascending: false })
       .limit(100)
   );
@@ -85,15 +79,7 @@ export async function searchCategories(
       .from("categories")
       .select("*")
       .eq("is_active", true)
-      .or(
-        tokens
-          .flatMap((t) => [
-            `name.ilike.%${t}%`,
-            `slug.ilike.%${t}%`,
-            `description.ilike.%${t}%`,
-          ])
-          .join(",")
-      )
+      .or(buildIlikeOrFilter(tokens, CATEGORY_SEARCH_FIELDS))
       .limit(20)
   );
 

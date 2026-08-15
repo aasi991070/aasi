@@ -1,12 +1,76 @@
 import type { Category, Product } from "@/types";
 import { findLevel1Category } from "@/lib/utils/getGenderCategory";
 
+/**
+ * Search filters are concatenated into PostgREST's `or=` grammar, where `,`
+ * `.` and `)` are structural. A token carrying any of them rewrites the filter
+ * expression rather than being matched against. Everything below exists to make
+ * that impossible; prompt 17 replaces the approach with Postgres FTS.
+ */
+export const MAX_QUERY_LENGTH = 128;
+const MAX_TOKENS = 6;
+const MAX_TOKEN_LENGTH = 32;
+
+/**
+ * Metacharacters are separators, not noise to be stripped. Stripping collapses
+ * `a,is_active.eq.false` into `ais_activeeqfalse`, which matches nothing;
+ * splitting yields an ordinary multi-word search.
+ */
+const SPLIT_ON = /[\s,.:;()[\]{}"'\\/|]+/;
+
+/**
+ * `\p{M}` is not optional. Devanagari vowel signs and the virama are marks, not
+ * letters, so a class of `\p{L}\p{N}` alone silently rewrites कुर्ता to करत.
+ * ZWNJ/ZWJ are allowed by codepoint because Indic and Arabic scripts use them
+ * to select half-forms; the rest of `\p{Cf}` (bidi overrides especially) stays
+ * out. Nothing permitted here is structural in PostgREST's `or=` grammar.
+ */
+const UNSAFE = /[^\p{L}\p{N}\p{M}\u200c\u200d\-_]/gu;
+
+export function sanitizeToken(token: string): string {
+  return token.replace(UNSAFE, "").trim();
+}
+
 export function tokenizeQuery(query: string): string[] {
-  return query
-    .toLowerCase()
-    .split(/\s+/)
-    .map((t) => t.trim())
-    .filter(Boolean);
+  const tokens: string[] = [];
+
+  for (const raw of query.slice(0, MAX_QUERY_LENGTH).toLowerCase().split(SPLIT_ON)) {
+    const token = sanitizeToken(raw);
+    // A single character matches most of the catalogue, so it costs a full
+    // ilike scan to narrow nothing.
+    if (token.length < 2) continue;
+
+    // Slice by code point: a plain slice can cut a surrogate pair in half and
+    // produce a lone half-character that matches nothing.
+    tokens.push(Array.from(token).slice(0, MAX_TOKEN_LENGTH).join(""));
+    if (tokens.length === MAX_TOKENS) break;
+  }
+
+  return tokens;
+}
+
+export const PRODUCT_SEARCH_FIELDS = [
+  "name",
+  "slug",
+  "description",
+  "gender",
+] as const;
+
+export const CATEGORY_SEARCH_FIELDS = ["name", "slug", "description"] as const;
+
+/**
+ * The single place an `or=` filter string is built. Safe only because every
+ * token has been through `tokenizeQuery` — do not call it with raw input.
+ */
+export function buildIlikeOrFilter(
+  tokens: string[],
+  fields: readonly string[]
+): string {
+  if (!tokens.length || !fields.length) return "";
+
+  return tokens
+    .flatMap((token) => fields.map((field) => `${field}.ilike.%${token}%`))
+    .join(",");
 }
 
 export function buildProductSearchText(

@@ -5,8 +5,10 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { getAllCategories } from "@/lib/queries/categories";
 import { PRODUCTS_PAGE_SIZE, REVALIDATE_SECONDS } from "@/constants";
 import {
+  buildIlikeOrFilter,
   buildProductSearchText,
   matchesAllTokens,
+  PRODUCT_SEARCH_FIELDS,
   tokenizeQuery,
 } from "@/lib/utils/searchText";
 import type {
@@ -35,20 +37,6 @@ function cachedProductQuery<TArgs extends unknown[], TResult>(
       tags: [PRODUCTS_TAG, ...extraTags],
       revalidate: REVALIDATE_SECONDS,
     })();
-}
-
-function buildAdminSearchOr(search: string): string {
-  const tokens = tokenizeQuery(search);
-  if (!tokens.length) return "";
-
-  return tokens
-    .flatMap((t) => [
-      `name.ilike.%${t}%`,
-      `slug.ilike.%${t}%`,
-      `description.ilike.%${t}%`,
-      `gender.ilike.%${t}%`,
-    ])
-    .join(",");
 }
 
 function mapProduct(row: Record<string, unknown>): Product {
@@ -80,7 +68,10 @@ export async function getProducts(
     .range(from, to);
 
   if (filters.search) {
-    const orClause = buildAdminSearchOr(filters.search);
+    const orClause = buildIlikeOrFilter(
+      tokenizeQuery(filters.search),
+      PRODUCT_SEARCH_FIELDS
+    );
     if (orClause) query = query.or(orClause);
   }
   if (filters.categoryId) {

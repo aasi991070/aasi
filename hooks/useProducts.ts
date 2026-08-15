@@ -2,6 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import {
+  buildIlikeOrFilter,
+  PRODUCT_SEARCH_FIELDS,
+  tokenizeQuery,
+} from "@/lib/utils/searchText";
 import type { Product, ProductFilters, ProductFormData } from "@/types";
 
 async function fetchProducts(filters: ProductFilters) {
@@ -18,23 +23,11 @@ async function fetchProducts(filters: ProductFilters) {
     .range(from, to);
 
   if (filters.search) {
-    const tokens = filters.search
-      .toLowerCase()
-      .split(/\s+/)
-      .map((t) => t.trim())
-      .filter(Boolean);
-    if (tokens.length) {
-      query = query.or(
-        tokens
-          .flatMap((t) => [
-            `name.ilike.%${t}%`,
-            `slug.ilike.%${t}%`,
-            `description.ilike.%${t}%`,
-            `gender.ilike.%${t}%`,
-          ])
-          .join(",")
-      );
-    }
+    const orClause = buildIlikeOrFilter(
+      tokenizeQuery(filters.search),
+      PRODUCT_SEARCH_FIELDS
+    );
+    if (orClause) query = query.or(orClause);
   }
   if (filters.categoryId) query = query.eq("category_id", filters.categoryId);
   if (filters.gender) query = query.eq("gender", filters.gender);

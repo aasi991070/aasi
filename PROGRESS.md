@@ -28,7 +28,7 @@ Branch: remediation · Started: 16 Aug 2026
 - [x] 02-lock-down-reviews — **done**
 - [x] 03-fix-revalidate — **done**
 - [x] 04-error-handling — **done**
-- [ ] 05-search-sanitise
+- [x] 05-search-sanitise — **done**
 
 ## Phase 1 — Storefront rebuild
 - [ ] 06-storefront-tokens
@@ -125,6 +125,11 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | 04 | Write helpers in `lib/queries/` no longer return `null` / `false` / `0` on failure — they throw and their return types narrowed accordingly. | The prompt says not to change return types "beyond removing the error-swallowing", and the sentinel return values *were* the error-swallowing. A caller can no longer confuse "rejected by RLS" with "validation failed". |
 | 04 | Wrapped the four catalogue server actions in `try/catch` and surfaced `DataError.message` through a `failureMessage()` helper. | Closes the deferred item from prompt 03: the admin now sees the actual Postgres reason instead of "Failed to save product". The actions are the correct place for it — they are the boundary between a throwing query layer and a UI that must not crash on a bad save. |
 | 04 | The admin boundary prints `error.message`; the storefront boundary prints only the digest. | Admins are trusted and need the reason; a customer-facing page must not leak schema or query internals. Next strips messages in production anyway, so the digest is the only usable handle for a report. |
+| 05 | The `UNSAFE` class is `[^\p{L}\p{N}\p{M}\u200c\u200d\-_]`, not the `[^\p{L}\p{N}\-_]` the prompt specified. | **The prompt's version fails its own acceptance criterion.** Devanagari vowel signs and the virama are marks (`\p{M}`), not letters, so `\p{L}\p{N}` alone rewrites `कुर्ता` to `करत`. The unit test caught it. ZWNJ/ZWJ are allowed by codepoint because Indic and Arabic use them to select half-forms; the rest of `\p{Cf}`, bidi overrides especially, stays out. Nothing added is structural in the `or=` grammar. |
+| 05 | Added `"target": "ES2020"` to `tsconfig.json`. | Out of scope but unavoidable: there was no `target`, so it defaulted to ES5 and `tsc` rejected the `u` flag the prompt requires (`TS1501`). `lib` was already `esnext`, so the file was internally inconsistent. `noEmit` is set, so this changes nothing about output — only which syntax `tsc` accepts. |
+| 05 | Tokens are sliced to 32 by code point (`Array.from`), not by `String.prototype.slice`. | A plain slice can cut a surrogate pair in half and leave a lone half-character that matches nothing. |
+| 05 | Exported `PRODUCT_SEARCH_FIELDS` / `CATEGORY_SEARCH_FIELDS` alongside `buildIlikeOrFilter`. | The prompt centralised the filter *construction* but left the field lists duplicated at all four call sites, which is how they drift. Now a field is added in one place. |
+| 05 | Vitest config is `vitest.config.mts`, not `.ts`. | Vitest does not read tsconfig `paths`, so the `@/` alias has to be redeclared or nothing under test resolves. `.mts` avoids a Vite warning about ESM syntax in a file loaded as CommonJS. Also added `test:watch`. |
 
 ## Verification notes
 
@@ -209,10 +214,28 @@ is swapped in mid-stream. Nothing in this prompt can change that. It matters for
 uptime monitoring — a health check on status code alone will not see these
 failures. Flagged for 28b, which owns monitoring.
 
+`05` — 17 unit tests, plus the injection proved end to end rather than argued:
+
+- Fired the **old** raw-concatenated filter at PostgREST directly with the anon
+  key: `HTTP 400`, body
+  `{"code":"22P02","message":"invalid input syntax for type boolean: \"false%\""}`.
+  So `is_active.eq.false` really was being parsed as a filter condition, and the
+  Postgres error text really was reaching the client. The same request built
+  from sanitised tokens returns `200 []`, and a real word returns rows.
+- Against a production build, `/search?q=` for `a,is_active.eq.false`, `%%%`,
+  `silk)`, `कुर्ता`, `lawn` and the empty string all return 200 with no
+  PostgREST text anywhere in the response and no error boundary. `lawn` and
+  `silk` return results; the hostile ones return the empty state.
+- The unicode test is the one that earned its keep — it failed on the first run
+  and exposed the `\p{M}` bug described above.
+
 ## Deferred
 
 | Issue | Which prompt should own it |
 |---|---|
+| Tokens may still contain `_`, which is a single-character wildcard in SQL `LIKE`, so `is_active` also matches `isXactive`. Harmless over-matching, not injection, and PostgREST's `or=` grammar has nowhere to put an `ESCAPE` clause. Full-text search removes the question. | 17-indexes-and-fts |
+| Single-character tokens are dropped, so a one-character CJK search matches nothing. No such products exist today. | 17-indexes-and-fts |
+| `npm audit` reports 7 high-severity advisories, all pre-existing and transitive (`next`/`postcss`, and `brace-expansion`/`glob`/`js-yaml` under the ESLint tooling). Vitest added none. Not touched here because upgrading Next mid-run would invalidate every version assumption in the plan. | 28b-ci-and-monitoring |
 | `app/(storefront)/error.tsx` uses `v18-card` / `v18-text-heading` / `v18-text-muted`. That violates the storefront design rule outright. Left as-is because the storefront tokens it should use do not exist yet — 06 creates them. | 06-storefront-tokens / 07-storefront-shell-swap |
 | Storefront errors reach the browser as HTTP 200 because Next 14 has already flushed the stream. Any uptime check that only reads status codes will miss a total database failure. | 28b-ci-and-monitoring |
 | The home page renders its catalogue but shows "No products found." in the featured section — no row in the restored database has `is_featured = true`. Data, not code, but the empty state is worth a second look once real data is back. | 10-product-card |
