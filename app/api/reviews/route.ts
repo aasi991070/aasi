@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createReview, getReviewsByProductId } from "@/lib/queries/reviews";
 import { getProductById } from "@/lib/queries/products";
+import {
+  REVIEW_RATE_LIMIT,
+  consumeReviewRateLimit,
+  hashClientIp,
+} from "@/lib/security/reviewRateLimit";
+
+/**
+ * Cheap, high-yield spam filter: review bodies have no legitimate reason to
+ * contain a link. Catches scheme-prefixed URLs, bare `www.`, and bare domains
+ * on the TLDs that turn up in link spam.
+ */
+const URL_PATTERN =
+  /(https?:\/\/|www\.|\b[a-z0-9][a-z0-9-]*\.(com|net|org|io|ru|cn|xyz|top|shop|store|info|biz|link|click)\b)/i;
 
 export async function GET(request: NextRequest) {
   const productId = request.nextUrl.searchParams.get("product_id");
@@ -8,6 +21,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "product_id required" }, { status: 400 });
   }
 
+  // getReviewsByProductId filters to status = 'approved'.
   const reviews = await getReviewsByProductId(productId);
   return NextResponse.json(reviews);
 }
@@ -41,20 +55,54 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    if (URL_PATTERN.test(reviewBody) || URL_PATTERN.test(author_name)) {
+      return NextResponse.json(
+        { message: "Reviews cannot contain links" },
+        { status: 400 }
+      );
+    }
+
+    // Fail closed. Without the salt we cannot rate limit or store a hash we
+    // are willing to keep, and submitting anyway would mean an unlimited
+    // anonymous write endpoint.
+    const ipHash = hashClientIp(request);
+    if (!ipHash) {
+      console.error("REVIEW_IP_SALT is not set; refusing review submissions.");
+      return NextResponse.json(
+        { message: "Reviews are temporarily unavailable" },
+        { status: 503 }
+      );
+    }
+
+    const withinLimit = await consumeReviewRateLimit(ipHash);
+    if (!withinLimit) {
+      return NextResponse.json(
+        {
+          message: `You can submit ${REVIEW_RATE_LIMIT} reviews per hour. Please try again later.`,
+        },
+        { status: 429 }
+      );
+    }
 
     const product = await getProductById(product_id);
     if (!product?.is_active) {
       return NextResponse.json({ message: "Product not found" }, { status: 404 });
     }
 
-    const review = await createReview({
+    await createReview({
       product_id,
       author_name,
       rating,
       body: reviewBody,
+      ip_hash: ipHash,
     });
 
-    return NextResponse.json(review, { status: 201 });
+    // 202, not 201: the review exists but is not published, and the client
+    // must not add it to the visible list.
+    return NextResponse.json(
+      { message: "Thanks — your review will appear once it's approved." },
+      { status: 202 }
+    );
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to submit review";

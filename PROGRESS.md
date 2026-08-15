@@ -4,7 +4,7 @@ Branch: remediation · Started: 16 Aug 2026
 
 ## Phase 0 — Stabilise
 - [x] 01-schema-baseline-rls — **done**
-- [ ] 02-lock-down-reviews
+- [x] 02-lock-down-reviews — **done**
 - [ ] 03-fix-revalidate
 - [ ] 04-error-handling
 - [ ] 05-search-sanitise
@@ -58,6 +58,7 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | `000_baseline.sql` | 01 | ☐ |
 | `001_site_settings.sql` (amended — drops the two over-broad write policies) | 01 | ☐ |
 | `003_admin_rls.sql` | 01 | ☐ |
+| `004_review_moderation.sql` | 02 | ☐ |
 
 > **`003` has a required manual follow-up.** Until a row exists in `admin_users`,
 > every catalogue write is denied — including the admin dashboard. Immediately
@@ -74,6 +75,7 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | Prompt | What I need |
 |---|---|
 | 01 | Run `000`, `001`, `003` in the Supabase SQL Editor, then insert the `admin_users` row (SQL above). Also: Authentication → Providers → Email → turn off *Enable signups*, and check Advisors → Security reports no missing RLS. Nothing later in the plan is blocked on this, but the live site keeps its old, unreviewed policies until it is done. |
+| 02 | Add `REVIEW_IP_SALT` to the Vercel project (production + preview + development). I generated one into `.env.local` for local work; production needs its own. Any 32-byte hex value: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. Until it is set in Vercel, `POST /api/reviews` returns 503 by design rather than accepting unlimited unrate-limited submissions. Also run `004`. |
 
 ## Decisions and deviations
 
@@ -85,6 +87,12 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | 01 | Added `admin_users` RLS (admin-only `select`, no write policies at all). | The prompt did not specify it. Without RLS the admin roster would be world-readable; with no write policies, membership can only be changed by the service role. |
 | 01 | **Replaced `eslint.config.mjs` with `.eslintrc.json`.** | Not in scope, but the gate could not run: `next lint` on Next 14.2 + ESLint 8 does not read flat config, so it dropped into an interactive "how would you like to configure ESLint?" prompt and hung. Flat config is Next 15. Both `next/core-web-vitals` and `next/typescript` exist in the installed `eslint-config-next@14.2.35`. |
 | 01 | Fixed three unused-variable lint errors outside the stated scope: `cn` in `CategoryTreeView.tsx`, `sidebarOpen` in `V18TopNav.tsx`, `REVALIDATE_SECONDS` in `HomePageClient.tsx`. | Repairing the lint config unmasked them, and the rule is never to commit on a red gate. All three are pure deletions of unused declarations. This breaks prompt 01's "no application source file changed" criterion — deliberately, and it is the only way to have both a working lint script and a green gate. |
+| 02 | Rate limiting is one `check_review_rate_limit()` Postgres function called over RPC, not select-then-upsert from the route. | The prompt asked for check-and-increment "in the same request". Two round trips from Node is racy — concurrent submissions read the same count and both pass. One statement in Postgres makes it atomic, and the cleanup `delete` still runs on the same path. |
+| 02 | `004` adds `status` with default `'approved'` then changes the default to `'pending'`, instead of a separate `update` backfill. | Same end state on first run, but re-running the file cannot approve whatever is sitting in the moderation queue. A literal backfill statement would have been a re-run footgun that silently publishes pending spam. Verified by re-running it twice against a pending row. |
+| 02 | Query layer selects an explicit column list instead of `select("*")`; `createReview` returns only `{ id }`. | `ip_hash` lives on that table now. `*` would have shipped it to the browser in the GET response the first time someone forgot. |
+| 02 | `POST /api/reviews` returns **503** when `REVIEW_IP_SALT` is unset, rather than proceeding. | Failing open would leave an unauthenticated, unrate-limited, service-role-backed write endpoint. Failing closed is the safe default and is loud enough to be noticed. |
+| 02 | Link filter also applies to `author_name`, not just the body. | The prompt only asked for the body, but the display name is just as good a place to put a URL. |
+| 02 | Added `.env.example` documenting all five environment variables. | The prompt asked me to "document" `REVIEW_IP_SALT` and there was nowhere to do it — no env documentation existed at all. |
 
 ## Verification notes
 
@@ -105,10 +113,29 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
   active product; the admin sees both and can insert; anon can still read
   `site_settings`; anon sees only the variant whose parent product is active.
 
+`02` — verified against a second throwaway database (`aasi2`) built by running
+`000 → 004` in order, with a review inserted *before* `004` so the backfill had
+something to act on:
+
+- Pre-existing review backfilled to `approved`; a review inserted afterwards
+  defaults to `pending`.
+- **Re-running `004` twice left the pending review pending** — the specific
+  regression the two-step default is there to prevent.
+- As `anon`: only the approved review is visible, and `review_rate_limits`
+  returns 0 rows (RLS on, no policies, service-role only).
+- `check_review_rate_limit('…', 3)` called five times returns `t,t,t,f,f`, so
+  the fourth submission in an hour is the one that gets 429.
+- The rate-limit table holds only the hash; no raw IP is written anywhere.
+
+Not verified end-to-end over HTTP (no running dev server against live
+Supabase); the boundary was tested at the database layer instead.
+
 ## Deferred
 
 | Issue | Which prompt should own it |
 |---|---|
+| `components/storefront/ProductReviews.tsx` is a storefront component still using `v18-*` classes (`v18-card`, `v18-text-heading`, `v18-text-muted`, `border-v18-border`). Left alone deliberately — restyling it now would collide with the shell swap. | 07-storefront-shell-swap / 12a-pdp-layout |
+| No admin UI for the moderation queue — reviews can only be approved with SQL. Nothing in the plan appears to add one. | flagged for Arif; 27b-admin-orders is the closest owner |
 | `@eslint/eslintrc` is now an unused devDependency (it existed only for `FlatCompat` in the deleted `eslint.config.mjs`). | 14-dead-code |
 | Every route builds as dynamic (`ƒ`), including `/`. Expected at this stage. | 15-restore-isr |
 | Pre-existing uncommitted work was in the tree at the start of this run — `RemoteImage.tsx`, `ImageUploader.tsx`, `ProductTable.tsx`, `next.config.mjs`, `lib/storage/images.ts` and five storefront components. Committed untouched as its own commit so later diffs stay honest. It looks like partial image-optimisation work. | 11-image-optimisation |

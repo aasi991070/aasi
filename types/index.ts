@@ -69,13 +69,22 @@ export interface StorefrontFilters {
   search?: string;
 }
 
+export type ReviewStatus = "pending" | "approved" | "rejected";
+
+/**
+ * Public shape of a review. Deliberately has no `ip_hash` — that column is
+ * never selected outside the moderation queue.
+ */
 export interface ProductReview {
   id: string;
   product_id: string;
   author_name: string;
   rating: number;
   body: string;
+  status: ReviewStatus;
+  order_id?: string | null;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface ReviewSummary {

@@ -9,12 +9,20 @@ async function fetchReviews(productId: string): Promise<ProductReview[]> {
   return res.json();
 }
 
+export interface ReviewSubmissionAck {
+  message: string;
+}
+
+/**
+ * Returns an acknowledgement, not a review: submissions are created as
+ * 'pending' and are not readable until an admin approves them.
+ */
 async function submitReview(input: {
   product_id: string;
   author_name: string;
   rating: number;
   body: string;
-}): Promise<ProductReview> {
+}): Promise<ReviewSubmissionAck> {
   const res = await fetch("/api/reviews", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

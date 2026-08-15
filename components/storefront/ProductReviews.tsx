@@ -52,7 +52,9 @@ export function ProductReviews({
       setAuthorName("");
       setRating(5);
       setBody("");
-      showToast("Review submitted", "success");
+      // The review is created as 'pending' and is not readable until approved,
+      // so it deliberately does not join the list above.
+      showToast("Thanks — your review will appear once it's approved", "success");
     } catch (error) {
       showToast(
         error instanceof Error ? error.message : "Failed to submit review",
