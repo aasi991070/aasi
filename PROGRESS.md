@@ -5,7 +5,7 @@ Branch: remediation · Started: 16 Aug 2026
 ## Phase 0 — Stabilise
 - [x] 01-schema-baseline-rls — **done**
 - [x] 02-lock-down-reviews — **done**
-- [ ] 03-fix-revalidate
+- [x] 03-fix-revalidate — **done**
 - [ ] 04-error-handling
 - [ ] 05-search-sanitise
 
@@ -93,6 +93,12 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | 02 | `POST /api/reviews` returns **503** when `REVIEW_IP_SALT` is unset, rather than proceeding. | Failing open would leave an unauthenticated, unrate-limited, service-role-backed write endpoint. Failing closed is the safe default and is loud enough to be noticed. |
 | 02 | Link filter also applies to `author_name`, not just the body. | The prompt only asked for the body, but the display name is just as good a place to put a URL. |
 | 02 | Added `.env.example` documenting all five environment variables. | The prompt asked me to "document" `REVIEW_IP_SALT` and there was nowhere to do it — no env documentation existed at all. |
+| 03 | The forms use `useTransition` for the post-save navigation, but the submit button's pending state comes from react-hook-form's `isSubmitting`, not from `isPending`. | The prompt said to call the actions via `useTransition`. On React 18 `startTransition` does not track an async callback past its first `await` — `isPending` would flip back to false while the save was still in flight, so the button would re-enable mid-save. `isSubmitting` is correct across awaits. `useTransition` still wraps `router.push`/`refresh`, which is what it is actually for here. Button is disabled on `isSubmitting || isNavigating`. |
+| 03 | Extracted the zod schemas into `lib/validation/catalog.ts` and re-validate inside the actions. | The schemas were duplicated inline in each form, and a server action is a public HTTP endpoint — client-side validation is a convenience, not a control. One definition now serves both. |
+| 03 | `saveProductAction` looks up the previous slug before updating and invalidates the old `product:<slug>` tag too. | Not asked for. Renaming a product would otherwise leave the old PDP URL serving stale cached content indefinitely. |
+| 03 | Category writes invalidate the `products` tag as well as `categories`. | Product payloads embed `category:categories(*)`, so a category rename would otherwise still show the old name on cached PDPs and cards. |
+| 03 | `getCategoriesByLevel(_, true)` and `getChildCategories(_, true)` now filter the single cached "all active categories" read instead of issuing their own queries. | The home page called `getChildCategories` once per level-1 category. This collapses those into one cached read. Partial overlap with prompt 16, which owns the wider dedupe work. |
+| 03 | Split each dual-purpose query by its `activeOnly` argument rather than adding new function names. | `activeOnly` reads are anonymous and cacheable; the rest need an admin session to see inactive rows. Routing on the existing flag kept every call site unchanged. |
 
 ## Verification notes
 
@@ -130,10 +136,36 @@ something to act on:
 Not verified end-to-end over HTTP (no running dev server against live
 Supabase); the boundary was tested at the database layer instead.
 
+`03` — verified against a real production build (`next start`), not just a
+compile:
+
+- `POST /api/revalidate` with **no** header → 401; wrong secret → 401; correct
+  secret → 200. With `REVALIDATE_SECRET` set to empty, **both** the no-header
+  and empty-header requests → 401. That last case is the actual bug: the old
+  `if (expectedSecret && …)` skipped the check entirely when the var was
+  missing, so a misconfiguration silently opened the endpoint.
+- 21 paths → 400; `{"paths":[1,2]}` → 400.
+- `/`, `/search?q=coat` and `/category/mens` all render 200 with no
+  "Route used `cookies` inside a function cached with `unstable_cache`" in the
+  server log — i.e. the `createPublicClient()` + `unstable_cache` combination
+  is actually working, not just type-checking.
+- Side effect worth noting: dropping the react-query mutation hooks from the
+  two forms cut First Load JS on the product/category edit pages from ~227 kB
+  and ~218 kB to ~151 kB and ~143 kB.
+
+**Not verified:** "edit a product, reload the PDP, see the change" and "saving
+with an expired session shows a real not-authorised message". Both need a
+signed-in admin against live Supabase, and `003` has not been applied yet, so
+`admin_users` does not exist there. The logic is in place
+(`requireAdmin()` → `revalidateTag`), but I have not watched it happen.
+Re-check once the migrations are run.
+
 ## Deferred
 
 | Issue | Which prompt should own it |
 |---|---|
+| Action failure messages are generic ("Could not update the product") because `createProduct` / `updateProduct` swallow the Postgres error and return `null`. The authorisation path does return specific messages. | 04-error-handling, which owns `lib/queries/` |
+| `getRelatedProducts` still makes up to five sequential round trips; it is now cached, not fixed. | 16-query-dedupe |
 | `components/storefront/ProductReviews.tsx` is a storefront component still using `v18-*` classes (`v18-card`, `v18-text-heading`, `v18-text-muted`, `border-v18-border`). Left alone deliberately — restyling it now would collide with the shell swap. | 07-storefront-shell-swap / 12a-pdp-layout |
 | No admin UI for the moderation queue — reviews can only be approved with SQL. Nothing in the plan appears to add one. | flagged for Arif; 27b-admin-orders is the closest owner |
 | `@eslint/eslintrc` is now an unused devDependency (it existed only for `FlatCompat` in the deleted `eslint.config.mjs`). | 14-dead-code |

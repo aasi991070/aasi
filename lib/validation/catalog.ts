@@ -1,0 +1,59 @@
+import { z } from "zod";
+
+/**
+ * Shared by the admin forms and the server actions. The forms use these for
+ * inline feedback; the actions re-validate with the same rules, because a
+ * server action is a public HTTP endpoint and client-side validation is a
+ * convenience, not a control.
+ */
+
+export const productSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  slug: z.string().min(1, "Slug is required"),
+  description: z.string().optional(),
+  price: z.coerce.number().min(0),
+  sale_price: z.coerce.number().optional(),
+  category_id: z.string().optional(),
+  gender: z.preprocess(
+    (val) => (val === "" || val == null ? undefined : val),
+    z.enum(["men", "women", "unisex"]).optional()
+  ),
+  sizes: z.array(z.string()),
+  colors: z.array(z.string()),
+  images: z.array(z.string()),
+  thumbnail_url: z.string().optional(),
+  in_stock: z.boolean(),
+  stock_count: z.coerce.number().min(0),
+  is_featured: z.boolean(),
+  is_active: z.boolean(),
+  tags: z.array(z.string()),
+});
+
+export type ProductFormValues = z.infer<typeof productSchema>;
+
+export const categorySchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  slug: z.string().min(1, "Slug is required"),
+  description: z.string().optional(),
+  image_url: z.string().optional(),
+  parent_id: z.string().optional(),
+  level: z.coerce.number().min(1).max(4),
+  sort_order: z.coerce.number().min(0),
+  is_active: z.boolean(),
+});
+
+export type CategoryFormValues = z.infer<typeof categorySchema>;
+
+/** Discriminated result so callers get a message instead of a thrown string. */
+export type ActionResult<T = undefined> =
+  | { ok: true; data: T }
+  | { ok: false; message: string };
+
+/** Flattens a ZodError into one readable sentence for a toast. */
+export function formatZodError(error: z.ZodError): string {
+  const first = error.errors[0];
+  if (!first) return "Please check the form and try again.";
+
+  const field = first.path.join(".");
+  return field ? `${field}: ${first.message}` : first.message;
+}

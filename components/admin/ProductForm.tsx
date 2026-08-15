@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,35 +13,12 @@ import {
   findLevel1Category,
   genderFromCategorySlug,
 } from "@/lib/utils/getGenderCategory";
-import { useCreateProduct, useUpdateProduct } from "@/hooks/useProducts";
 import { useUiStore } from "@/hooks/useUiStore";
+import { saveProductAction } from "@/lib/actions/catalog";
 import { slugify } from "@/lib/utils/slugify";
+import { productSchema, type ProductFormValues } from "@/lib/validation/catalog";
 import type { Category, Product } from "@/types";
 import { ImageUploader } from "./ImageUploader";
-
-const productSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  slug: z.string().min(1, "Slug is required"),
-  description: z.string().optional(),
-  price: z.coerce.number().min(0),
-  sale_price: z.coerce.number().optional(),
-  category_id: z.string().optional(),
-  gender: z.preprocess(
-    (val) => (val === "" || val == null ? undefined : val),
-    z.enum(["men", "women", "unisex"]).optional()
-  ),
-  sizes: z.array(z.string()),
-  colors: z.array(z.string()),
-  images: z.array(z.string()),
-  thumbnail_url: z.string().optional(),
-  in_stock: z.boolean(),
-  stock_count: z.coerce.number().min(0),
-  is_featured: z.boolean(),
-  is_active: z.boolean(),
-  tags: z.array(z.string()),
-});
-
-type ProductFormValues = z.infer<typeof productSchema>;
 
 interface ProductFormProps {
   existing?: Product;
@@ -52,8 +28,7 @@ interface ProductFormProps {
 export function ProductForm({ existing, categories }: ProductFormProps) {
   const router = useRouter();
   const { showToast } = useUiStore();
-  const createProduct = useCreateProduct();
-  const updateProduct = useUpdateProduct();
+  const [isNavigating, startTransition] = useTransition();
 
   const flatCategories = useMemo(() => {
     const flatten = (cats: Category[]): Category[] =>
@@ -108,35 +83,30 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
     if (gender) setValue("gender", gender);
   }, [categoryId, flatCategories, setValue]);
 
+  // The action re-checks admin authorisation, re-validates, writes, and
+  // invalidates the affected cache tags server-side. The old code posted to
+  // /api/revalidate from here without the secret header, so the request 401'd
+  // and the failure was never surfaced.
   const onSubmit = async (data: ProductFormValues) => {
-    try {
-      const payload = {
-        ...data,
-        thumbnail_url: data.images[0] ?? data.thumbnail_url,
-        sale_price: data.sale_price || undefined,
-        category_id: data.category_id || undefined,
-      };
+    const result = await saveProductAction(data, existing?.id);
 
-      if (existing) {
-        await updateProduct.mutateAsync({ id: existing.id, data: payload });
-        showToast("Product updated successfully", "success");
-      } else {
-        await createProduct.mutateAsync(payload);
-        showToast("Product created successfully", "success");
-      }
+    if (!result.ok) {
+      showToast(result.message, "error");
+      return;
+    }
 
-      await fetch("/api/revalidate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paths: ["/", "/product", "/category"] }),
-      });
+    showToast(
+      existing ? "Product updated successfully" : "Product created successfully",
+      "success"
+    );
 
+    startTransition(() => {
       router.push("/admin/dashboard/products");
       router.refresh();
-    } catch {
-      showToast("Failed to save product", "error");
-    }
+    });
   };
+
+  const busy = isSubmitting || isNavigating;
 
   const toggleSize = (size: string) => {
     setValue(
@@ -273,12 +243,8 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
           </label>
         </div>
 
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full min-h-11"
-        >
-          {isSubmitting ? "Saving..." : existing ? "Update Product" : "Create Product"}
+        <Button type="submit" disabled={busy} className="w-full min-h-11">
+          {busy ? "Saving..." : existing ? "Update Product" : "Create Product"}
         </Button>
       </div>
     </form>

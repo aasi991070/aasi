@@ -1,32 +1,19 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CATEGORY_LEVELS } from "@/constants";
-import { useCreateCategory, useUpdateCategory } from "@/hooks/useCategories";
 import { useUiStore } from "@/hooks/useUiStore";
+import { saveCategoryAction } from "@/lib/actions/catalog";
 import { slugify } from "@/lib/utils/slugify";
+import { categorySchema, type CategoryFormValues } from "@/lib/validation/catalog";
 import type { Category } from "@/types";
-
-const categorySchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  slug: z.string().min(1, "Slug is required"),
-  description: z.string().optional(),
-  image_url: z.string().optional(),
-  parent_id: z.string().optional(),
-  level: z.coerce.number().min(1).max(4),
-  sort_order: z.coerce.number().min(0),
-  is_active: z.boolean(),
-});
-
-type CategoryFormValues = z.infer<typeof categorySchema>;
 
 interface CategoryFormProps {
   existing?: Category;
@@ -47,8 +34,7 @@ export function CategoryForm({
 }: CategoryFormProps) {
   const router = useRouter();
   const { showToast } = useUiStore();
-  const createCategory = useCreateCategory();
-  const updateCategory = useUpdateCategory();
+  const [isNavigating, startTransition] = useTransition();
   const flat = flattenCategories(categories);
 
   const {
@@ -78,33 +64,22 @@ export function CategoryForm({
   }, [name, existing, setValue]);
 
   const onSubmit = async (data: CategoryFormValues) => {
-    try {
-      const payload = {
-        ...data,
-        level: data.level as 1 | 2 | 3 | 4,
-        parent_id: data.parent_id || undefined,
-      };
+    const result = await saveCategoryAction(data, existing?.id);
 
-      if (existing) {
-        await updateCategory.mutateAsync({ id: existing.id, data: payload });
-        showToast("Category updated", "success");
-      } else {
-        await createCategory.mutateAsync(payload);
-        showToast("Category created", "success");
-      }
+    if (!result.ok) {
+      showToast(result.message, "error");
+      return;
+    }
 
-      await fetch("/api/revalidate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paths: ["/", "/category"] }),
-      });
+    showToast(existing ? "Category updated" : "Category created", "success");
 
+    startTransition(() => {
       router.push("/admin/dashboard/categories");
       router.refresh();
-    } catch {
-      showToast("Failed to save category", "error");
-    }
+    });
   };
+
+  const busy = isSubmitting || isNavigating;
 
   return (
     <form
@@ -175,8 +150,8 @@ export function CategoryForm({
         Active
       </label>
 
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Saving..." : existing ? "Update Category" : "Create Category"}
+      <Button type="submit" disabled={busy}>
+        {busy ? "Saving..." : existing ? "Update Category" : "Create Category"}
       </Button>
     </form>
   );

@@ -1,6 +1,8 @@
+import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { getAllCategories } from "@/lib/queries/categories";
-import { PRODUCTS_PAGE_SIZE } from "@/constants";
+import { PRODUCTS_PAGE_SIZE, REVALIDATE_SECONDS } from "@/constants";
 import {
   buildProductSearchText,
   matchesAllTokens,
@@ -26,6 +28,26 @@ function buildAdminSearchOr(search: string): string {
       `gender.ilike.%${t}%`,
     ])
     .join(",");
+}
+
+/**
+ * Anonymous storefront reads are cached under the `products` tag (plus a
+ * per-slug tag for PDPs) and go through the cookie-free client — `cookies()`
+ * cannot appear inside `unstable_cache` on Next 14. Admin reads need to see
+ * inactive rows, so they stay on the session client, uncached.
+ */
+const PRODUCTS_TAG = "products";
+
+function cachedProductQuery<TArgs extends unknown[], TResult>(
+  keyPrefix: string,
+  fn: (...args: TArgs) => Promise<TResult>,
+  extraTags: string[] = []
+) {
+  return (...args: TArgs) =>
+    unstable_cache(() => fn(...args), [keyPrefix, JSON.stringify(args)], {
+      tags: [PRODUCTS_TAG, ...extraTags],
+      revalidate: REVALIDATE_SECONDS,
+    })();
 }
 
 function mapProduct(row: Record<string, unknown>): Product {
@@ -101,16 +123,24 @@ export async function getProducts(
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("products")
-      .select("*, category:categories(*), variants:product_variants(*)")
-      .eq("slug", slug)
-      .eq("is_active", true)
-      .maybeSingle();
+    // Tagged per slug as well as globally, so editing one product does not
+    // have to purge every other PDP.
+    return await cachedProductQuery(
+      "products:by-slug",
+      async (s: string) => {
+        const supabase = createPublicClient();
+        const { data, error } = await supabase
+          .from("products")
+          .select("*, category:categories(*), variants:product_variants(*)")
+          .eq("slug", s)
+          .eq("is_active", true)
+          .maybeSingle();
 
-    if (error) throw error;
-    return data ? mapProduct(data) : null;
+        if (error) throw error;
+        return data ? mapProduct(data) : null;
+      },
+      [`product:${slug}`]
+    )(slug);
   } catch {
     return null;
   }
@@ -132,23 +162,26 @@ export async function getProductById(id: string): Promise<Product | null> {
   }
 }
 
-export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("is_featured", true)
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(limit);
+export const getFeaturedProducts = cachedProductQuery(
+  "products:featured",
+  async (limit: number = 8): Promise<Product[]> => {
+    try {
+      const supabase = createPublicClient();
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("is_featured", true)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(limit);
 
-    if (error) throw error;
-    return (data ?? []).map(mapProduct);
-  } catch {
-    return [];
+      if (error) throw error;
+      return (data ?? []).map(mapProduct);
+    } catch {
+      return [];
+    }
   }
-}
+);
 
 export async function getRecentProducts(limit = 10): Promise<Product[]> {
   try {
@@ -166,29 +199,41 @@ export async function getRecentProducts(limit = 10): Promise<Product[]> {
   }
 }
 
-export async function getNewArrivals(limit = 12): Promise<Product[]> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(limit);
+export const getNewArrivals = cachedProductQuery(
+  "products:new-arrivals",
+  async (limit: number = 12): Promise<Product[]> => {
+    try {
+      const supabase = createPublicClient();
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(limit);
 
-    if (error) throw error;
-    return (data ?? []).map(mapProduct);
-  } catch {
-    return [];
+      if (error) throw error;
+      return (data ?? []).map(mapProduct);
+    } catch {
+      return [];
+    }
   }
-}
+);
 
-export async function getProductsByCategory(
-  categoryIds: string[],
-  storefrontFilters: StorefrontFilters = {}
-): Promise<Product[]> {
-  try {
-    const supabase = await createClient();
+/**
+ * Only the database round trip is cached. The in-memory filtering below stays
+ * outside, because the search branch calls `getAllCategories`, which is itself
+ * cached — nesting one `unstable_cache` inside another buys nothing and makes
+ * the keys harder to reason about.
+ */
+const fetchCategoryProducts = cachedProductQuery(
+  "products:by-category",
+  async (
+    categoryIds: string[],
+    inStock: boolean,
+    minPrice: number | null,
+    maxPrice: number | null
+  ): Promise<Product[]> => {
+    const supabase = createPublicClient();
     let query = supabase
       .from("products")
       .select("*")
@@ -196,20 +241,33 @@ export async function getProductsByCategory(
       .eq("is_active", true)
       .order("created_at", { ascending: false });
 
-    if (storefrontFilters.inStock) {
+    if (inStock) {
       query = query.eq("in_stock", true);
     }
-    if (storefrontFilters.minPrice != null) {
-      query = query.gte("price", storefrontFilters.minPrice);
+    if (minPrice != null) {
+      query = query.gte("price", minPrice);
     }
-    if (storefrontFilters.maxPrice != null) {
-      query = query.lte("price", storefrontFilters.maxPrice);
+    if (maxPrice != null) {
+      query = query.lte("price", maxPrice);
     }
 
     const { data, error } = await query;
     if (error) throw error;
+    return (data ?? []).map(mapProduct);
+  }
+);
 
-    let products = (data ?? []).map(mapProduct);
+export async function getProductsByCategory(
+  categoryIds: string[],
+  storefrontFilters: StorefrontFilters = {}
+): Promise<Product[]> {
+  try {
+    let products = await fetchCategoryProducts(
+      categoryIds,
+      storefrontFilters.inStock === true,
+      storefrontFilters.minPrice ?? null,
+      storefrontFilters.maxPrice ?? null
+    );
 
     if (storefrontFilters.sizes?.length) {
       products = products.filter((p) =>
@@ -238,21 +296,26 @@ export async function getProductsByCategory(
   }
 }
 
-export async function getRelatedProducts(
-  product: Product,
-  limit = 4
-): Promise<Product[]> {
-  if (!product.category_id) return [];
-
-  try {
-    const supabase = await createClient();
+/**
+ * Keyed on the ids it actually depends on rather than the whole product, so
+ * the cache key stays small and stable across unrelated field edits.
+ * Prompt 16 replaces the walk up the tree with an in-memory lookup.
+ */
+const fetchRelatedProducts = cachedProductQuery(
+  "products:related",
+  async (
+    productId: string,
+    categoryId: string,
+    limit: number
+  ): Promise<Product[]> => {
+    const supabase = createPublicClient();
     const { data: category } = await supabase
       .from("categories")
       .select("parent_id")
-      .eq("id", product.category_id)
+      .eq("id", categoryId)
       .maybeSingle();
 
-    let level3Id = product.category_id;
+    let level3Id = categoryId;
     if (category?.parent_id) {
       const { data: parent } = await supabase
         .from("categories")
@@ -284,11 +347,22 @@ export async function getRelatedProducts(
       .select("*")
       .in("category_id", categoryIds)
       .eq("is_active", true)
-      .neq("id", product.id)
+      .neq("id", productId)
       .limit(limit);
 
     if (error) throw error;
     return (data ?? []).map(mapProduct);
+  }
+);
+
+export async function getRelatedProducts(
+  product: Product,
+  limit = 4
+): Promise<Product[]> {
+  if (!product.category_id) return [];
+
+  try {
+    return await fetchRelatedProducts(product.id, product.category_id, limit);
   } catch {
     return [];
   }
