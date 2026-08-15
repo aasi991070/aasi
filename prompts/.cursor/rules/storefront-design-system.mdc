@@ -1,0 +1,75 @@
+---
+description: Storefront design system — luxury minimal. Applies to all public store routes.
+globs: app/(storefront)/**/*.tsx, components/storefront/**/*.tsx, app/globals.css
+alwaysApply: false
+---
+
+# Storefront Design System — Luxury Minimal
+
+## Mental model
+
+**Off-white paper, near-black ink, one warm gold accent.** Think high-end fashion
+house — editorial, generous, restrained. Nothing decorative that doesn't earn
+its place. This is a completely different visual language from the admin CMS.
+
+## Hard rules
+
+- **Never** use `v18-*` tokens, `v18-*` utility classes, or `V18Shell` /
+  `V18Sidebar` / `V18TopNav` anywhere under `app/(storefront)/` or
+  `components/storefront/`. Those are admin-only.
+- The storefront has **no sidebar**. Chrome is `Navbar` (sticky, top) +
+  `Footer` (bottom), both from `components/storefront/`.
+- No notification bells, no avatars, no breadcrumb strings in the header, and
+  no public link to `/admin`.
+
+## Color tokens (globals.css @theme)
+
+| Role | Token | Value |
+|------|-------|-------|
+| Primary text | `--color-store-ink` | `#0f0f0f` |
+| Secondary text | `--color-store-ink-muted` | `#6b6b6b` |
+| Page background | `--color-store-surface` | `#fafaf8` |
+| Card surface | `--color-store-white` | `#ffffff` |
+| Border (hairline) | `--color-store-border` | `#e8e6e1` |
+| Accent | `--color-store-accent` | `#c8a96e` |
+| Accent hover | `--color-store-accent-dark` | `#9d7f48` |
+
+Gold is used **only** on CTAs, sale prices, and hover states. Never on
+decoration, never as a background fill for large areas.
+
+## Typography
+
+- `--font-display` = Cormorant Garamond (300/400/500) — headings only
+- `--font-sans` = DM Sans (400/500) — body, labels, nav, prices
+- Never Inter, never Geist, never Roboto.
+- Hero headline: display, 56–72px, weight 300, tracking -0.02em
+- Section titles: display, 32–40px, weight 400
+- Body / nav / labels: sans, 14–16px, weight 400
+- Price: sans, weight 500
+
+## Surface & spacing
+
+- **Hairline borders only** — `1px solid var(--color-store-border)`.
+- **No box shadows on storefront surfaces.** Elevation comes from whitespace.
+- Section vertical padding ≥ 80px. Product grid gap ≥ 32px.
+- Product imagery is always `object-cover`, aspect-ratio 3/4. Never distort.
+
+## Motion
+
+CSS transitions by default. Product card image scales to 1.03 over 400ms
+ease-out. Page fades in over 200ms. No bounce, no spring. Respect
+`prefers-reduced-motion` on every animation.
+
+Do **not** import `framer-motion` into storefront components — CSS is enough
+and it keeps these components on the server.
+
+## Component defaults
+
+- `ProductCard` — no border at rest; hairline appears on hover. Name, then
+  price below. Sale price in accent with the original struck through.
+- `Navbar` — sticky; transparent at scroll top, `--color-store-white` once
+  scrolled. Nav links uppercase, tracking-widest, text-xs.
+- `CategoryFilter` — left rail on desktop, bottom sheet on mobile. Pill tags,
+  filled with accent when active.
+- `SizeSelector` / `ColorSelector` — real radio groups. Out-of-stock sizes are
+  struck through, non-interactive, and announced to assistive tech.
