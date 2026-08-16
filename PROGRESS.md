@@ -65,9 +65,9 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 12c-remaining-storefront-surfaces — **done**
 - [x] 13-accessibility — **done**
 - [x] 14-dead-code — **done**
+- [x] 15-restore-isr — **done**
 
 ## Phase 2 — Performance & SEO
-- [ ] 15-restore-isr
 - [ ] 16-query-dedupe
 - [ ] 17-indexes-and-fts
 - [ ] 18a-category-query-and-pagination
@@ -350,6 +350,14 @@ added (wired in 28a). Supabase migrations still manual — PDPs error until appl
 `framer-motion`, `@eslint/eslintrc`; admin pages import shared `PageHeader`
 with `surface="admin"`; added `knip` + `eslint-plugin-unused-imports`.
 `/` First Load JS unchanged: 109 kB (shared 87.4 kB).
+
+`15` — gate green. Cached `getSiteSettings` via public client + `unstable_cache`;
+settings read moved to storefront/admin layouts; monochrome scoped to `.monochrome`
+wrapper + `MonochromeProvider` per layout; `revalidateTag("settings")` on PATCH.
+Category filters client-side (`FilteredProductGrid`); `generateStaticParams` on
+product/category routes. Build: `/` static (○), `/product/[slug]` and
+`/category/[...slug]` SSG (●, 140 pages). Reviews cached via public client;
+missing table returns [] so prerender succeeds until migrations run.
 
 ## Deferred
 
