@@ -6,7 +6,7 @@ Branch: remediation · Started: 16 Aug 2026
 
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
 - **Last push after prompt:** 13-accessibility (attempt failed — GitHub 403 as `alwiarif46`)
-- **Prompts since last push:** 3 (14-dead-code, 15-restore-isr, 16-query-dedupe)
+- **Prompts since last push:** 4 (14-dead-code, 15-restore-isr, 16-query-dedupe, 17-indexes-and-fts)
 - **Next push after prompt:** 18a-category-query-and-pagination (after 15, 16, 17, 18a)
 
 ## Deploy cadence
@@ -67,9 +67,9 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 14-dead-code — **done**
 - [x] 15-restore-isr — **done**
 - [x] 16-query-dedupe — **done**
+- [x] 17-indexes-and-fts — **done**
 
 ## Phase 2 — Performance & SEO
-- [ ] 17-indexes-and-fts
 - [ ] 18a-category-query-and-pagination
 - [ ] 18b-filter-ui-and-facets
 - [ ] 19-single-query-layer
@@ -103,6 +103,7 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | `003_admin_rls.sql` | 01 | ☐ |
 | `004_review_moderation.sql` | 02 | ☐ |
 | `005_site_content.sql` | 09a | ☐ |
+| `006_search_and_indexes.sql` | 17 | ☐ |
 
 > **`003` has a required manual follow-up.** Until a row exists in `admin_users`,
 > every catalogue write is denied — including the admin dashboard. Immediately
@@ -365,6 +366,12 @@ cached categories fetch (N+1 loop removed); `getRelatedProducts` resolves tree i
 memory then one product query with featured/created ordering. Removed
 `getCategoryBreadcrumb`.
 
+`17` — gate green. Added `006_search_and_indexes.sql` (catalogue indexes,
+`search_vector`, `search_products` / `search_categories` RPCs with pg_trgm).
+Storefront and admin search use RPC; Node post-filtering removed. `buildIlikeOrFilter`
+kept in `hooks/useProducts.ts` with TODO(19). **Requires manual migration 006**
+before search works against live DB.
+
 ## Deferred
 
 | Issue | Which prompt should own it |
@@ -376,8 +383,6 @@ memory then one product query with featured/created ordering. Removed
 | `BrandMark.tsx` asks for `font-extrabold` at `tracking-[0.18em]`, but Cormorant is loaded at 300/400/500 only, so the wordmark renders synthetically bolded. The token now at least points at a brand family instead of nothing; the right fix is to restyle the mark. | 08-navbar-rebuild |
 | The storefront still renders the admin shell — the home page has a sidebar toggle, a notification bell and a public `/admin` link, and `BrandMark` is not mounted at all. Expected at this stage; tokens exist now but nothing consumes them. | 07-storefront-shell-swap |
 | `NEXT_PUBLIC_SITE_URL` is set to `http://localhost:3000` locally. Production needs the real origin in Vercel or every canonical and Open Graph URL will point at localhost. | flagged for Arif; see "Blocked on Arif" |
-| Tokens may still contain `_`, which is a single-character wildcard in SQL `LIKE`, so `is_active` also matches `isXactive`. Harmless over-matching, not injection, and PostgREST's `or=` grammar has nowhere to put an `ESCAPE` clause. Full-text search removes the question. | 17-indexes-and-fts |
-| Single-character tokens are dropped, so a one-character CJK search matches nothing. No such products exist today. | 17-indexes-and-fts |
 | `npm audit` reports 7 high-severity advisories, all pre-existing and transitive (`next`/`postcss`, and `brace-expansion`/`glob`/`js-yaml` under the ESLint tooling). Vitest added none. Not touched here because upgrading Next mid-run would invalidate every version assumption in the plan. | 28b-ci-and-monitoring |
 | `app/(storefront)/error.tsx` uses `v18-card` / `v18-text-heading` / `v18-text-muted`. That violates the storefront design rule outright. Left as-is because the storefront tokens it should use do not exist yet — 06 creates them. | 06-storefront-tokens / 07-storefront-shell-swap |
 | Storefront errors reach the browser as HTTP 200 because Next 14 has already flushed the stream. Any uptime check that only reads status codes will miss a total database failure. | 28b-ci-and-monitoring |

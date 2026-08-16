@@ -5,10 +5,9 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { getAllCategories } from "@/lib/queries/categories";
 import { PRODUCTS_PAGE_SIZE, REVALIDATE_SECONDS } from "@/constants";
 import {
-  buildIlikeOrFilter,
   buildProductSearchText,
   matchesAllTokens,
-  PRODUCT_SEARCH_FIELDS,
+  MAX_QUERY_LENGTH,
   tokenizeQuery,
 } from "@/lib/utils/searchText";
 import type {
@@ -61,19 +60,59 @@ export async function getProducts(
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
+  if (filters.search) {
+    const trimmed = filters.search.trim().slice(0, MAX_QUERY_LENGTH);
+    const tokens = tokenizeQuery(trimmed);
+    if (!tokens.length) {
+      return { products: [], total: 0 };
+    }
+
+    const data = assertOk(
+      "products.search",
+      await supabase.rpc("search_products", { q: trimmed, lim: 100 })
+    );
+
+    let products = ((data ?? []) as Record<string, unknown>[]).map(mapProduct);
+
+    if (filters.categoryId) {
+      products = products.filter(
+        (product: Product) => product.category_id === filters.categoryId
+      );
+    }
+    if (filters.gender) {
+      products = products.filter(
+        (product: Product) => product.gender === filters.gender
+      );
+    }
+    if (filters.inStock !== undefined) {
+      products = products.filter(
+        (product: Product) => product.in_stock === filters.inStock
+      );
+    }
+    if (filters.isActive !== undefined) {
+      products = products.filter(
+        (product: Product) => product.is_active === filters.isActive
+      );
+    }
+    if (filters.isFeatured !== undefined) {
+      products = products.filter(
+        (product: Product) => product.is_featured === filters.isFeatured
+      );
+    }
+
+    const total = products.length;
+    return {
+      products: products.slice(from, to + 1),
+      total,
+    };
+  }
+
   let query = supabase
     .from("products")
     .select("*, category:categories(*)", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(from, to);
 
-  if (filters.search) {
-    const orClause = buildIlikeOrFilter(
-      tokenizeQuery(filters.search),
-      PRODUCT_SEARCH_FIELDS
-    );
-    if (orClause) query = query.or(orClause);
-  }
   if (filters.categoryId) {
     query = query.eq("category_id", filters.categoryId);
   }
@@ -93,19 +132,9 @@ export async function getProducts(
   const { data, error, count } = await query;
   assertOk("products.list", { data, error });
 
-  let products = (data ?? []).map(mapProduct);
-
-  if (filters.search) {
-    const tokens = tokenizeQuery(filters.search);
-    const allCategories = await getAllCategories();
-    products = products.filter((p) =>
-      matchesAllTokens(buildProductSearchText(p, allCategories), tokens)
-    );
-  }
-
   return {
-    products,
-    total: filters.search ? products.length : (count ?? 0),
+    products: (data ?? []).map(mapProduct),
+    total: count ?? 0,
   };
 }
 

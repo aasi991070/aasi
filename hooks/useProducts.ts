@@ -23,6 +23,7 @@ async function fetchProducts(filters: ProductFilters) {
     .range(from, to);
 
   if (filters.search) {
+    // TODO(19): replace with search_products RPC when useProducts moves to the query layer.
     const orClause = buildIlikeOrFilter(
       tokenizeQuery(filters.search),
       PRODUCT_SEARCH_FIELDS
