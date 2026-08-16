@@ -1,58 +1,78 @@
-"use client";
-
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { RemoteImage } from "@/components/shared/RemoteImage";
+import { AddToCartButton } from "@/components/storefront/AddToCartButton";
 import { resolveImageUrl, getProductImagePaths } from "@/lib/storage/images";
 import { formatPrice } from "@/lib/utils/formatPrice";
+import { cn } from "@/lib/utils";
 import type { Product } from "@/types";
 
 interface ProductCardProps {
   product: Product;
+  priority?: boolean;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, priority = false }: ProductCardProps) {
   const imagePath = getProductImagePaths(product)[0];
   const imageUrl = resolveImageUrl(imagePath);
 
-  const hasSale = product.sale_price != null && product.sale_price < product.price;
+  const hasSale =
+    product.sale_price != null && product.sale_price < product.price;
+  const soldOut = !product.in_stock;
 
   return (
-    <motion.article className="v18-card group overflow-hidden p-0" whileHover="hover" initial="rest">
+    <article
+      className={cn(
+        "group border border-transparent bg-store-white transition-[border-color,transform] duration-300",
+        "hover:border-store-border",
+        "motion-reduce:transition-none"
+      )}
+    >
       <Link href={`/product/${product.slug}`} className="block">
-        <div className="relative aspect-[3/4] overflow-hidden bg-slate-100">
-          <motion.div
-            className="relative size-full"
-            variants={{
-              rest: { scale: 1 },
-              hover: { scale: 1.03 },
-            }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-          >
-            <RemoteImage
-              src={imageUrl}
-              alt={product.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 50vw, 25vw"
-            />
-          </motion.div>
+        <div className="relative aspect-[3/4] overflow-hidden bg-store-surface">
+          {(hasSale || soldOut) && (
+            <div className="absolute left-3 top-3 z-10 flex flex-col gap-2">
+              {soldOut ? (
+                <span className="bg-store-ink px-2 py-1 font-sans text-[0.625rem] uppercase tracking-[0.15em] text-store-white">
+                  Sold out
+                </span>
+              ) : hasSale ? (
+                <span className="border border-store-accent bg-store-white px-2 py-1 font-sans text-[0.625rem] uppercase tracking-[0.15em] text-store-accent-dark">
+                  Sale
+                </span>
+              ) : null}
+            </div>
+          )}
+
+          <RemoteImage
+            src={imageUrl}
+            alt={product.name}
+            fill
+            priority={priority}
+            className={cn(
+              "object-cover transition-transform duration-[400ms] ease-out",
+              "group-hover:scale-[1.03]",
+              "motion-reduce:transform-none motion-reduce:transition-none"
+            )}
+            sizes="(max-width: 768px) 50vw, 25vw"
+          />
         </div>
 
-        <div className="p-4">
-          <h3 className="text-sm font-medium v18-text-heading">{product.name}</h3>
+        <div className="px-4 pb-3 pt-4">
+          <h3 className="font-sans text-sm font-normal text-store-ink">
+            {product.name}
+          </h3>
           <div className="mt-1 flex items-center gap-2">
             {hasSale ? (
               <>
-                <span className="text-sm font-semibold text-v18-primary">
+                <span className="font-sans text-sm font-medium text-store-accent">
                   {formatPrice(product.sale_price!)}
                 </span>
-                <span className="text-sm v18-text-muted line-through">
+                <span className="font-sans text-sm text-store-ink-muted line-through">
                   {formatPrice(product.price)}
                 </span>
               </>
             ) : (
-              <span className="text-sm font-semibold v18-text-heading">
+              <span className="font-sans text-sm font-medium text-store-ink">
                 {formatPrice(product.price)}
               </span>
             )}
@@ -60,14 +80,17 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </Link>
 
-      <div className="px-4 pb-4 opacity-0 transition-opacity group-hover:opacity-100">
-        <button
-          type="button"
-          className="v18-btn-primary w-full py-2.5 text-xs font-medium uppercase tracking-[0.1em]"
-        >
-          Add to Cart
-        </button>
+      <div
+        className={cn(
+          "px-4 pb-4 transition-opacity duration-200",
+          "lg:invisible lg:opacity-0",
+          "lg:group-hover:visible lg:group-hover:opacity-100",
+          "lg:group-focus-within:visible lg:group-focus-within:opacity-100",
+          "motion-reduce:transition-none"
+        )}
+      >
+        <AddToCartButton />
       </div>
-    </motion.article>
+    </article>
   );
 }

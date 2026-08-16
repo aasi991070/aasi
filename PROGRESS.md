@@ -36,7 +36,7 @@ Branch: remediation · Started: 16 Aug 2026
 - [x] 08-navbar-rebuild — **done**
 - [x] 09a-footer — **done**
 - [x] 09b-static-pages — **done**
-- [ ] 10-product-card
+- [x] 10-product-card — **done**
 - [ ] 11-image-optimisation
 - [ ] 12a-pdp-layout
 - [ ] 12b-pdp-gallery-and-selectors
