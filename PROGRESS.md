@@ -69,7 +69,6 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 16-query-dedupe — **done**
 
 ## Phase 2 — Performance & SEO
-- [ ] 16-query-dedupe
 - [ ] 17-indexes-and-fts
 - [ ] 18a-category-query-and-pagination
 - [ ] 18b-filter-ui-and-facets
@@ -384,7 +383,6 @@ memory then one product query with featured/created ordering. Removed
 | Storefront errors reach the browser as HTTP 200 because Next 14 has already flushed the stream. Any uptime check that only reads status codes will miss a total database failure. | 28b-ci-and-monitoring |
 | The home page renders its catalogue but shows "No products found." in the featured section — no row in the restored database has `is_featured = true`. Data, not code, but the empty state is worth a second look once real data is back. | 10-product-card |
 | Action failure messages are generic ("Could not update the product") because `createProduct` / `updateProduct` swallow the Postgres error and return `null`. The authorisation path does return specific messages. | 04-error-handling, which owns `lib/queries/` |
-| `getRelatedProducts` still makes up to five sequential round trips; it is now cached, not fixed. | 16-query-dedupe |
 | ~~`components/storefront/ProductReviews.tsx` is a storefront component still using `v18-*` classes~~ Restyled in 12a. `StarRating.tsx` still uses `v18-warning` / `v18-border` for star fill — out of 12a scope; 12c or 13 may own it. | 12a-pdp-layout |
 | No admin UI for the moderation queue — reviews can only be approved with SQL. Nothing in the plan appears to add one. | flagged for Arif; 27b-admin-orders is the closest owner |
 | Every route builds as dynamic (`ƒ`), including `/`. Expected at this stage. | 15-restore-isr |
