@@ -37,6 +37,8 @@ export interface Product {
   meta_title?: string;
   meta_description?: string;
   image_alts?: string[];
+  tax_rate?: number;
+  hsn_code?: string;
   created_at: string;
   updated_at: string;
   variants?: ProductVariant[];
@@ -379,6 +381,59 @@ export interface Coupon {
   usage_limit?: number | null;
   used_count: number;
   is_active: boolean;
+}
+
+export interface ShippingRate {
+  id: string;
+  code: string;
+  label: string;
+  amount: number;
+  free_above?: number | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export type CheckoutErrorCode =
+  | "EMPTY_CART"
+  | "STOCK_CHANGED"
+  | "INVALID_COUPON"
+  | "INVALID_INPUT"
+  | "UNKNOWN";
+
+export interface CheckoutStockIssue {
+  itemId: string;
+  productName: string;
+  reason: string;
+}
+
+export interface CheckoutError {
+  code: CheckoutErrorCode;
+  message: string;
+  items?: CheckoutStockIssue[];
+}
+
+export type CheckoutActionResult =
+  | { ok: true; data: { orderId: string; orderNumber: string; total: number } }
+  | { ok: false; error: CheckoutError };
+
+export interface CheckoutFormState {
+  contact: {
+    email: string;
+    phone: string;
+  };
+  shippingAddress: {
+    name: string;
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: "IN";
+    phone: string;
+  };
+  shippingRateId: string;
+  saveAddress: boolean;
+  selectedAddressId?: string;
 }
 
 export interface Shipment {

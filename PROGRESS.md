@@ -5,11 +5,9 @@ Branch: remediation · Started: 16 Aug 2026
 ## Git push cadence
 
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
-- **Last push after prompt:** 18a-category-query-and-pagination (attempt failed — GitHub 403 as `alwiarif46`)
-- **Last push after prompt:** 22a (attempt failed — GitHub 403 as `alwiarif46`)
-- **Prompts since last push:** 4 (22b, 23, 24a, 24b)
-- **Next push after prompt:** 25 (5th in batch)
-- **Next push after prompt:** 19 (2nd in batch; push after 19 completes if batch is 18b–19–20–21–22a, or adjust when 5th lands)
+- **Last push after prompt:** 25-checkout (attempt — see below)
+- **Prompts since last push:** 0
+- **Next push after prompt:** 30 (5th in next batch: 26, 27a, 27b, 27c, 28a — or when explicitly asked)
 
 ## Deploy cadence
 
@@ -84,7 +82,7 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 23-variants-admin — **done**
 - [x] 24a-cart-actions — **done**
 - [x] 24b-cart-ui — **done**
-- [ ] 25-checkout
+- [x] 25-checkout — **done**
 - [ ] 26-razorpay
 - [ ] 27a-customer-accounts
 - [ ] 27b-admin-orders
@@ -110,6 +108,7 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | `008_commerce_core.sql` | 22a | ☐ |
 | `009_commerce_support.sql` | 22b | ☐ |
 | `010_product_seo_and_variants.sql` | 23 | ☐ |
+| `011_shipping_rates.sql` | 25 | ☐ |
 
 > **`003` has a required manual follow-up.** Until a row exists in `admin_users`,
 > every catalogue write is denied — including the admin dashboard. Immediately

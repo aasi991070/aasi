@@ -25,6 +25,7 @@ Re-running the whole directory against production should change no data.
 | `002_product_reviews.sql` | `product_reviews` table | pre-existing |
 | `003_admin_rls.sql` | `admin_users`, `is_admin()`, all catalogue + storage + settings policies | prompt 01 |
 | `010_product_seo_and_variants.sql` | product SEO columns, variant admin fields, `save_product_variants` RPC | prompt 23 |
+| `011_shipping_rates.sql` | `shipping_rates` table, `products.tax_rate` / `hsn_code` | prompt 25 |
 
 `000` must run before `002`, which has a foreign key to `products`.
 `003` must run last of the four: `001` deliberately leaves `site_settings`
