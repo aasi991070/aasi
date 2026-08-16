@@ -13,6 +13,68 @@ export const BRAND_ADMIN_NAME = "Aasi CMS";
 export const BRAND_TAGLINE = "Luxury Clothing";
 export const BRAND_LOGO_PATH = "/logo.png";
 
+export const FOOTER_TAGLINE =
+  "Luxury minimal clothing crafted for the modern wardrobe.";
+
+export type FooterLink = {
+  label: string;
+  href: string;
+};
+
+export type FooterNavGroup = {
+  title: string;
+  links: FooterLink[];
+};
+
+/** Static footer columns. Shop links are built from the category tree at runtime. */
+export const FOOTER_NAV_GROUPS: FooterNavGroup[] = [
+  {
+    title: "Help",
+    links: [
+      { label: "Contact", href: "/contact" },
+      { label: "Shipping & Delivery", href: "/shipping" },
+      { label: "Returns & Exchanges", href: "/returns" },
+      { label: "Size Guide", href: "/size-guide" },
+      { label: "FAQ", href: "/faq" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [{ label: "About", href: "/about" }],
+  },
+  {
+    title: "Legal",
+    links: [
+      { label: "Terms of Service", href: "/terms" },
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Refund & Cancellation Policy", href: "/refund-policy" },
+    ],
+  },
+];
+
+export type SocialLink = {
+  label: string;
+  href: string;
+};
+
+export const SOCIAL_LINKS: SocialLink[] = [
+  { label: "Instagram", href: "https://instagram.com/aasi" },
+  { label: "Facebook", href: "https://facebook.com/aasi" },
+  { label: "Pinterest", href: "https://pinterest.com/aasi" },
+];
+
+export type PaymentMethod = {
+  label: string;
+};
+
+/** Display-only labels until Razorpay checkout ships branded assets in 26. */
+export const PAYMENT_METHODS: PaymentMethod[] = [
+  { label: "Visa" },
+  { label: "Mastercard" },
+  { label: "UPI" },
+  { label: "RuPay" },
+];
+
 export const CURRENCY_CODE = "INR";
 export const CURRENCY_LOCALE = "en-IN";
 

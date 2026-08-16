@@ -34,7 +34,7 @@ Branch: remediation · Started: 16 Aug 2026
 - [x] 06-storefront-tokens — **done**
 - [x] 07-storefront-shell-swap — **done**
 - [x] 08-navbar-rebuild — **done**
-- [ ] 09a-footer
+- [x] 09a-footer — **done**
 - [ ] 09b-static-pages
 - [ ] 10-product-card
 - [ ] 11-image-optimisation
