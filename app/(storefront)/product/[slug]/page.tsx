@@ -8,7 +8,6 @@ import { ProductReviews } from "@/components/storefront/ProductReviews";
 import { buildProductMetadata } from "@/lib/metadata/product";
 import {
   getAllCategories,
-  getCategoryBreadcrumb,
 } from "@/lib/queries/categories";
 import {
   getAllActiveProductSlugs,
@@ -19,7 +18,10 @@ import {
   getReviewSummary,
   getReviewsByProductId,
 } from "@/lib/queries/reviews";
-import { findLevel1Category } from "@/lib/utils/getGenderCategory";
+import {
+  findLevel1Category,
+  getCategoryBreadcrumbPath,
+} from "@/lib/utils/getGenderCategory";
 
 export const revalidate = REVALIDATE_SECONDS;
 export const dynamicParams = true;
@@ -54,11 +56,11 @@ export default async function ProductPage({
     product.category_id,
     allCategories
   );
+  const breadcrumb = product.category_id
+    ? getCategoryBreadcrumbPath(product.category_id, allCategories)
+    : [];
 
-  const [breadcrumb, related, reviews, reviewSummary] = await Promise.all([
-    product.category_id
-      ? getCategoryBreadcrumb(product.category_id)
-      : Promise.resolve([]),
+  const [related, reviews, reviewSummary] = await Promise.all([
     getRelatedProducts(product),
     getReviewsByProductId(product.id),
     getReviewSummary(product.id),

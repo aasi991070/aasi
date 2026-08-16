@@ -6,7 +6,7 @@ Branch: remediation · Started: 16 Aug 2026
 
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
 - **Last push after prompt:** 13-accessibility (attempt failed — GitHub 403 as `alwiarif46`)
-- **Prompts since last push:** 2 (14-dead-code, 15-restore-isr)
+- **Prompts since last push:** 3 (14-dead-code, 15-restore-isr, 16-query-dedupe)
 - **Next push after prompt:** 18a-category-query-and-pagination (after 15, 16, 17, 18a)
 
 ## Deploy cadence
@@ -66,6 +66,7 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 13-accessibility — **done**
 - [x] 14-dead-code — **done**
 - [x] 15-restore-isr — **done**
+- [x] 16-query-dedupe — **done**
 
 ## Phase 2 — Performance & SEO
 - [ ] 16-query-dedupe
@@ -358,6 +359,12 @@ Category filters client-side (`FilteredProductGrid`); `generateStaticParams` on
 product/category routes. Build: `/` static (○), `/product/[slug]` and
 `/category/[...slug]` SSG (●, 140 pages). Reviews cached via public client;
 missing table returns [] so prerender succeeds until migrations run.
+
+`16` — gate green. `React.cache` on category reads; category page hoists one
+`getAllCategories(true)` + in-memory breadcrumb/descendants; home page uses one
+cached categories fetch (N+1 loop removed); `getRelatedProducts` resolves tree in
+memory then one product query with featured/created ordering. Removed
+`getCategoryBreadcrumb`.
 
 ## Deferred
 

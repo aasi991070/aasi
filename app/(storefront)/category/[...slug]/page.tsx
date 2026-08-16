@@ -10,10 +10,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   getAllCategories,
   getAllCategorySlugPaths,
-  getCategoryBreadcrumb,
 } from "@/lib/queries/categories";
 import { getProductsByCategory } from "@/lib/queries/products";
 import { splitDescriptionParagraphs } from "@/lib/utils/formatDescription";
+import { getCategoryBreadcrumbPath } from "@/lib/utils/getGenderCategory";
+import type { Category } from "@/types";
 
 export const revalidate = REVALIDATE_SECONDS;
 export const dynamicParams = true;
@@ -22,8 +23,7 @@ export async function generateStaticParams() {
   return getAllCategorySlugPaths();
 }
 
-async function resolveCategoryFromSlugs(slugs: string[]) {
-  const all = await getAllCategories(true);
+function resolveCategoryFromSlugs(slugs: string[], all: Category[]) {
   let current = all.find((c) => c.slug === slugs[0] && c.level === 1);
 
   for (let i = 1; i < slugs.length && current; i++) {
@@ -37,10 +37,7 @@ async function resolveCategoryFromSlugs(slugs: string[]) {
   return current ?? null;
 }
 
-async function getDescendantIds(
-  categoryId: string,
-  all: Awaited<ReturnType<typeof getAllCategories>>
-) {
+function getDescendantIds(categoryId: string, all: Category[]) {
   const ids = new Set<string>([categoryId]);
   const collect = (parentId: string) => {
     all
@@ -60,7 +57,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string[] }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const category = await resolveCategoryFromSlugs(slug);
+  const allCategories = await getAllCategories(true);
+  const category = resolveCategoryFromSlugs(slug, allCategories);
   if (!category) return { title: "Category Not Found" };
   return {
     title: category.name,
@@ -74,12 +72,12 @@ export default async function CategoryPage({
   params: Promise<{ slug: string[] }>;
 }) {
   const { slug } = await params;
-  const category = await resolveCategoryFromSlugs(slug);
+  const allCategories = await getAllCategories(true);
+  const category = resolveCategoryFromSlugs(slug, allCategories);
   if (!category) notFound();
 
-  const allCategories = await getAllCategories(true);
-  const categoryIds = await getDescendantIds(category.id, allCategories);
-  const breadcrumb = await getCategoryBreadcrumb(category.id);
+  const categoryIds = getDescendantIds(category.id, allCategories);
+  const breadcrumb = getCategoryBreadcrumbPath(category.id, allCategories);
   const products = await getProductsByCategory(categoryIds);
 
   const availableColors = Array.from(

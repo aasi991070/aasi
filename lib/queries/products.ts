@@ -273,61 +273,54 @@ export async function getProductsByCategory(
 /**
  * Keyed on the ids it actually depends on rather than the whole product, so
  * the cache key stays small and stable across unrelated field edits.
- * Prompt 16 replaces the walk up the tree with an in-memory lookup.
+ * Level-3 ancestor and sibling categories are resolved in memory via
+ * `getAllCategories(true)` — one product query only.
  */
+function resolveLevel3CategoryId(
+  categoryId: string,
+  allCategories: Awaited<ReturnType<typeof getAllCategories>>
+): string {
+  const byId = new Map(allCategories.map((category) => [category.id, category]));
+  const category = byId.get(categoryId);
+  if (!category) return categoryId;
+
+  let level3Id = categoryId;
+
+  if (category.parent_id) {
+    const parent = byId.get(category.parent_id);
+    if (parent?.level === 3) {
+      level3Id = parent.id;
+    } else if (parent?.parent_id) {
+      const grandparent = byId.get(parent.parent_id);
+      if (grandparent?.level === 3) {
+        level3Id = grandparent.id;
+      }
+    }
+  }
+
+  return level3Id;
+}
+
+function getRelatedCategoryIds(
+  level3Id: string,
+  allCategories: Awaited<ReturnType<typeof getAllCategories>>
+): string[] {
+  return allCategories
+    .filter(
+      (category) =>
+        category.id === level3Id || category.parent_id === level3Id
+    )
+    .map((category) => category.id);
+}
+
 const fetchRelatedProducts = cachedProductQuery(
   "products:related",
   async (
     productId: string,
-    categoryId: string,
+    categoryIds: string[],
     limit: number
   ): Promise<Product[]> => {
     const supabase = createPublicClient();
-    const category = assertOk(
-      "products.related.category",
-      await supabase
-        .from("categories")
-        .select("parent_id")
-        .eq("id", categoryId)
-        .maybeSingle()
-    );
-
-    let level3Id = categoryId;
-    if (category?.parent_id) {
-      const parent = assertOk(
-        "products.related.parent",
-        await supabase
-          .from("categories")
-          .select("id, level, parent_id")
-          .eq("id", category.parent_id)
-          .maybeSingle()
-      );
-
-      if (parent?.level === 3) {
-        level3Id = parent.id;
-      } else if (parent?.parent_id) {
-        const grandparent = assertOk(
-          "products.related.grandparent",
-          await supabase
-            .from("categories")
-            .select("id, level")
-            .eq("id", parent.parent_id)
-            .maybeSingle()
-        );
-        if (grandparent?.level === 3) level3Id = grandparent.id;
-      }
-    }
-
-    const siblingCategories = assertOk(
-      "products.related.siblings",
-      await supabase
-        .from("categories")
-        .select("id")
-        .or(`id.eq.${level3Id},parent_id.eq.${level3Id}`)
-    );
-
-    const categoryIds = (siblingCategories ?? []).map((c) => c.id);
-
     const data = assertOk(
       "products.related",
       await supabase
@@ -336,6 +329,8 @@ const fetchRelatedProducts = cachedProductQuery(
         .in("category_id", categoryIds)
         .eq("is_active", true)
         .neq("id", productId)
+        .order("is_featured", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(limit)
     );
 
@@ -348,7 +343,13 @@ export async function getRelatedProducts(
   limit = 4
 ): Promise<Product[]> {
   if (!product.category_id) return [];
-  return fetchRelatedProducts(product.id, product.category_id, limit);
+
+  const allCategories = await getAllCategories(true);
+  const level3Id = resolveLevel3CategoryId(product.category_id, allCategories);
+  const categoryIds = getRelatedCategoryIds(level3Id, allCategories).sort();
+  if (!categoryIds.length) return [];
+
+  return fetchRelatedProducts(product.id, categoryIds, limit);
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {

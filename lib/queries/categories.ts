@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { REVALIDATE_SECONDS } from "@/constants";
 import { assertOk } from "@/lib/errors";
@@ -81,18 +82,35 @@ const getCachedActiveCategories = cachedCategoryQuery(
   () => fetchCategories(true, true)
 );
 
-export async function getCategoryTree(activeOnly = false): Promise<Category[]> {
+export async function getHomeCategoryCards(): Promise<
+  { l1: Category; children: Category[] }[]
+> {
+  const all = await getAllCategories(true);
+
+  return all
+    .filter((category) => category.level === 1)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((l1) => ({
+      l1,
+      children: all
+        .filter((child) => child.parent_id === l1.id)
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .slice(0, 3),
+    }));
+}
+
+export const getCategoryTree = cache(async (activeOnly = false): Promise<Category[]> => {
   const categories = activeOnly
     ? await getCachedActiveCategories()
     : await fetchCategories(false, false);
   return buildTree(categories);
-}
+});
 
-export async function getAllCategories(activeOnly = false): Promise<Category[]> {
+export const getAllCategories = cache(async (activeOnly = false): Promise<Category[]> => {
   return activeOnly
     ? getCachedActiveCategories()
     : fetchCategories(false, false);
-}
+});
 
 export async function getAllCategorySlugPaths(): Promise<{ slug: string[] }[]> {
   const all = await getAllCategories(true);
@@ -135,9 +153,7 @@ export async function getCategoriesByLevel(
   return (data ?? []) as Category[];
 }
 
-export async function getCategoryBySlug(
-  slug: string
-): Promise<Category | null> {
+export const getCategoryBySlug = cache(async (slug: string): Promise<Category | null> => {
   return cachedCategoryQuery("categories:by-slug", async (s: string) => {
     const supabase = createPublicClient();
     const data = assertOk(
@@ -148,9 +164,9 @@ export async function getCategoryBySlug(
     // Genuinely absent, not a failure.
     return data as Category | null;
   })(slug);
-}
+});
 
-export async function getCategoryById(id: string): Promise<Category | null> {
+export const getCategoryById = cache(async (id: string): Promise<Category | null> => {
   const supabase = await createClient();
   const data = assertOk(
     "categories.byId",
@@ -158,7 +174,7 @@ export async function getCategoryById(id: string): Promise<Category | null> {
   );
 
   return data as Category | null;
-}
+});
 
 export async function getChildCategories(
   parentId: string,
@@ -182,22 +198,6 @@ export async function getChildCategories(
   );
 
   return (data ?? []) as Category[];
-}
-
-export async function getCategoryBreadcrumb(
-  categoryId: string
-): Promise<Category[]> {
-  const all = await getAllCategories(true);
-  const map = new Map(all.map((c) => [c.id, c]));
-  const breadcrumb: Category[] = [];
-  let current = map.get(categoryId);
-
-  while (current) {
-    breadcrumb.unshift(current);
-    current = current.parent_id ? map.get(current.parent_id) : undefined;
-  }
-
-  return breadcrumb;
 }
 
 export async function getDescendantCategoryIds(
