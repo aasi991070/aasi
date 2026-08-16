@@ -454,6 +454,73 @@ export interface DashboardStats {
   totalCategories: number;
 }
 
+export interface SalesMetricsWindow {
+  today: number;
+  last_7d: number;
+  last_30d: number;
+}
+
+export interface SalesTopProduct {
+  name: string;
+  product_id?: string | null;
+  units: number;
+  revenue: number;
+}
+
+export interface LowStockVariant {
+  variant_id: string;
+  product_id: string;
+  product_name: string;
+  size?: string | null;
+  color?: string | null;
+  stock_count: number;
+}
+
+export interface SalesMetrics {
+  revenue: SalesMetricsWindow;
+  orders: SalesMetricsWindow;
+  aov: SalesMetricsWindow;
+  top_by_units: SalesTopProduct[];
+  top_by_revenue: SalesTopProduct[];
+  low_stock_variants: LowStockVariant[];
+  pending_reviews: number;
+  catalog: DashboardStats;
+}
+
+export type OrderEventType = "status_change" | "note" | "refund" | "shipment";
+
+export interface OrderEvent {
+  id: string;
+  order_id: string;
+  actor_id?: string | null;
+  from_status?: string | null;
+  to_status?: string | null;
+  event_type: OrderEventType;
+  payload?: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface AdminOrderListItem {
+  id: string;
+  order_number: string;
+  email: string;
+  phone?: string;
+  status: OrderStatus;
+  payment_status: OrderPaymentStatus;
+  total: number;
+  created_at: string;
+  item_count: number;
+}
+
+export type OrderActionResult =
+  | { ok: true; message?: string }
+  | { ok: false; error: { code: string; message: string } };
+
+export interface RefundLineInput {
+  orderItemId: string;
+  qty: number;
+}
+
 export interface SiteSettings {
   monochrome_enabled: boolean;
   hero_title: string;

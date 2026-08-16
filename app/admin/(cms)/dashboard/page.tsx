@@ -1,13 +1,13 @@
-import { getDashboardStats, getRecentProducts } from "@/lib/queries/products";
+import { getRecentProducts, getSalesMetrics } from "@/lib/queries/products";
 import { AdminDashboardClient } from "@/components/admin/AdminDashboardClient";
 
 export default async function AdminDashboardPage() {
-  const [stats, recentProducts] = await Promise.all([
-    getDashboardStats(),
+  const [metrics, recentProducts] = await Promise.all([
+    getSalesMetrics(),
     getRecentProducts(10),
   ]);
 
   return (
-    <AdminDashboardClient stats={stats} recentProducts={recentProducts} />
+    <AdminDashboardClient metrics={metrics} recentProducts={recentProducts} />
   );
 }

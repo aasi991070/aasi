@@ -14,10 +14,14 @@ import type {
   CategoryProductsResult,
   CategorySort,
   DashboardStats,
+  LowStockVariant,
   Product,
   ProductFilters,
   ProductFormData,
   ProductVariant,
+  SalesMetrics,
+  SalesMetricsWindow,
+  SalesTopProduct,
   StorefrontFilters,
   VariantFormInput,
 } from "@/types";
@@ -744,6 +748,104 @@ export async function getRelatedProducts(
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
+  const metrics = await getSalesMetrics();
+  return metrics.catalog;
+}
+
+export async function getSalesMetrics(): Promise<SalesMetrics> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_sales_metrics", {
+    p_low_stock_threshold: 5,
+  });
+
+  if (error) {
+    if (error.code === "PGRST202" || error.message?.includes("get_sales_metrics")) {
+      const stats = await getDashboardStatsFallback();
+      return {
+        revenue: emptyWindow(),
+        orders: emptyWindow(),
+        aov: emptyWindow(),
+        top_by_units: [],
+        top_by_revenue: [],
+        low_stock_variants: [],
+        pending_reviews: 0,
+        catalog: stats,
+      };
+    }
+
+    assertOk("sales.metrics", { data: null, error });
+  }
+
+  const payload = (data ?? {}) as Record<string, unknown>;
+
+  return {
+    revenue: parseWindow(payload.revenue),
+    orders: parseWindow(payload.orders),
+    aov: parseWindow(payload.aov),
+    top_by_units: parseTopProducts(payload.top_by_units),
+    top_by_revenue: parseTopProducts(payload.top_by_revenue),
+    low_stock_variants: parseLowStock(payload.low_stock_variants),
+    pending_reviews: Number(
+      (payload.pending_reviews as number | string | undefined) ?? 0
+    ),
+    catalog: parseCatalog(payload.catalog),
+  };
+}
+
+function emptyWindow(): SalesMetricsWindow {
+  return { today: 0, last_7d: 0, last_30d: 0 };
+}
+
+function parseWindow(value: unknown): SalesMetricsWindow {
+  const row = (value ?? {}) as Record<string, unknown>;
+  return {
+    today: Number(row.today ?? 0),
+    last_7d: Number(row.last_7d ?? 0),
+    last_30d: Number(row.last_30d ?? 0),
+  };
+}
+
+function parseTopProducts(value: unknown): SalesTopProduct[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.map((row) => {
+    const item = row as Record<string, unknown>;
+    return {
+      name: String(item.name ?? "Item"),
+      product_id: item.product_id != null ? String(item.product_id) : null,
+      units: Number(item.units ?? 0),
+      revenue: Number(item.revenue ?? 0),
+    };
+  });
+}
+
+function parseLowStock(value: unknown): LowStockVariant[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.map((row) => {
+    const item = row as Record<string, unknown>;
+    return {
+      variant_id: String(item.variant_id),
+      product_id: String(item.product_id),
+      product_name: String(item.product_name),
+      size: item.size != null ? String(item.size) : null,
+      color: item.color != null ? String(item.color) : null,
+      stock_count: Number(item.stock_count ?? 0),
+    };
+  });
+}
+
+function parseCatalog(value: unknown): DashboardStats {
+  const row = (value ?? {}) as Record<string, unknown>;
+  return {
+    totalProducts: Number(row.total_products ?? 0),
+    activeProducts: Number(row.active_products ?? 0),
+    outOfStock: Number(row.out_of_stock ?? 0),
+    totalCategories: Number(row.total_categories ?? 0),
+  };
+}
+
+async function getDashboardStatsFallback(): Promise<DashboardStats> {
   const supabase = await createClient();
 
   const [totalRes, activeRes, oosRes, catRes] = await Promise.all([
@@ -755,7 +857,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     supabase
       .from("products")
       .select("*", { count: "exact", head: true })
-      .eq("in_stock", false),
+      .lte("stock_count", 0),
     supabase.from("categories").select("*", { count: "exact", head: true }),
   ]);
 

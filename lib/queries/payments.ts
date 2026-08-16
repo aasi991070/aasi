@@ -64,3 +64,36 @@ export async function getLatestPaymentForOrder(
 
   return row ? mapPayment(row) : null;
 }
+
+export async function getPaymentsForOrder(orderId: string): Promise<Payment[]> {
+  const service = createServiceClient();
+  const rows = assertOk(
+    "payments.forOrder",
+    await service
+      .from("payments")
+      .select("*")
+      .eq("order_id", orderId)
+      .order("created_at", { ascending: false })
+  );
+
+  return (rows ?? []).map(mapPayment);
+}
+
+export async function getCapturedPaymentForOrder(
+  orderId: string
+): Promise<Payment | null> {
+  const service = createServiceClient();
+  const row = assertOk(
+    "payments.capturedForOrder",
+    await service
+      .from("payments")
+      .select("*")
+      .eq("order_id", orderId)
+      .eq("status", "captured")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+  );
+
+  return row ? mapPayment(row) : null;
+}

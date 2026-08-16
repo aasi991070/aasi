@@ -18,21 +18,26 @@ function mapShipment(row: Record<string, unknown>): Shipment {
 export async function getShipmentByOrderId(
   orderId: string
 ): Promise<Shipment | null> {
+  const shipments = await getShipmentsByOrderId(orderId);
+  return shipments[0] ?? null;
+}
+
+export async function getShipmentsByOrderId(
+  orderId: string
+): Promise<Shipment[]> {
   const service = createServiceClient();
   const { data, error } = await service
     .from("shipments")
     .select("*")
     .eq("order_id", orderId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("created_at", { ascending: false });
 
   if (error) {
     if (error.code === "PGRST205") {
-      return null;
+      return [];
     }
     assertOk("shipments.byOrder", { data, error });
   }
 
-  return data ? mapShipment(data) : null;
+  return (data ?? []).map(mapShipment);
 }

@@ -6,8 +6,8 @@ Branch: remediation · Started: 16 Aug 2026
 
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
 - **Last push after prompt:** 25-checkout (attempt failed — GitHub 403 as `alwiarif46`)
-- **Prompts since last push:** 1 (26)
-- **Next push after prompt:** 30 (5th in batch: 27a, 27b, 27c, 28a, 28b)
+- **Prompts since last push:** 3 (26, 27a, 27b)
+- **Next push after prompt:** 28a (5th in batch: 27b, 27c, 28a)
 
 ## Deploy cadence
 
@@ -85,7 +85,7 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 25-checkout — **done**
 - [x] 26-razorpay — **done**
 - [x] 27a-customer-accounts — **done**
-- [ ] 27b-admin-orders
+- [x] 27b-admin-orders — **done**
 - [ ] 27c-email-and-verified-reviews
 
 ## Phase 4
@@ -109,6 +109,7 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | `009_commerce_support.sql` | 22b | ☐ |
 | `010_product_seo_and_variants.sql` | 23 | ☐ |
 | `011_shipping_rates.sql` | 25 | ☐ |
+| `012_order_events.sql` | 27b | ☐ |
 
 > **`003` has a required manual follow-up.** Until a row exists in `admin_users`,
 > every catalogue write is denied — including the admin dashboard. Immediately
@@ -397,6 +398,12 @@ cart_items, addresses, orders, order_items + RLS; `in_stock` now generated from
 `22b` — gate green. Commerce support migration (`009_commerce_support.sql`):
 payments, inventory_moves, coupons, shipments; `decrement_stock` / `restock` with
 `for update` locking; `redeem_coupon`; admin-only RLS on all four tables.
+
+`27b` — gate green. Migration `012_order_events.sql` (`order_events` audit trail +
+`get_sales_metrics` RPC); admin order list/detail with filters; server-side status
+machine, shipments, Razorpay refunds + `restock()`; dashboard shows revenue/AOV/top
+products/low stock; Orders nav under Sales. Email hooks stubbed for 27c.
+**Requires manual migration 012** before order events and sales metrics work live.
 
 ## Deferred
 

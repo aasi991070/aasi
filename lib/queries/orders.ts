@@ -9,7 +9,7 @@ import { getProductImagePaths, resolveImageUrl } from "@/lib/storage/images";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 import type { CreateOrderInput } from "@/lib/validation/checkout";
-import type { CheckoutStockIssue, Order, OrderAddressSnapshot, OrderItem, OrderPaymentStatus, OrderStatus, Product } from "@/types";
+import type { CheckoutStockIssue, Order, OrderAddressSnapshot, OrderItem, OrderPaymentStatus, OrderStatus, Product, AdminOrderListItem } from "@/types";
 
 interface ValidatedCheckoutLine {
   cartItemId: string;
@@ -438,5 +438,104 @@ export async function countCustomerOrders() {
   }
 
   return count ?? 0;
+}
+
+export const ADMIN_ORDERS_PAGE_SIZE = 20;
+
+export interface AdminOrderListFilters {
+  status?: OrderStatus;
+  paymentStatus?: OrderPaymentStatus;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+}
+
+export async function getAdminOrders(
+  filters: AdminOrderListFilters = {}
+): Promise<{ orders: AdminOrderListItem[]; total: number; page: number }> {
+  const supabase = await createClient();
+  const page = Math.max(1, filters.page ?? 1);
+  const from = (page - 1) * ADMIN_ORDERS_PAGE_SIZE;
+  const to = from + ADMIN_ORDERS_PAGE_SIZE - 1;
+
+  let query = supabase
+    .from("orders")
+    .select("id, order_number, email, phone, status, payment_status, total, created_at, order_items(count)", {
+      count: "exact",
+    })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (filters.status) {
+    query = query.eq("status", filters.status);
+  }
+
+  if (filters.paymentStatus) {
+    query = query.eq("payment_status", filters.paymentStatus);
+  }
+
+  if (filters.dateFrom) {
+    query = query.gte("created_at", filters.dateFrom);
+  }
+
+  if (filters.dateTo) {
+    query = query.lte("created_at", filters.dateTo);
+  }
+
+  const search = filters.search?.trim();
+  if (search) {
+    const term = `%${search.replace(/[%_]/g, "")}%`;
+    query = query.or(
+      `order_number.ilike.${term},email.ilike.${term},phone.ilike.${term}`
+    );
+  }
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    if (error.code === "PGRST205") {
+      return { orders: [], total: 0, page };
+    }
+    assertOk("orders.adminList", { data: null, error });
+  }
+
+  const orders = (data ?? []).map((row) => {
+    const record = row as Record<string, unknown>;
+    const itemRows = record.order_items as { count?: number }[] | undefined;
+    const itemCount = Number(itemRows?.[0]?.count ?? 0);
+
+    return {
+      id: String(record.id),
+      order_number: String(record.order_number),
+      email: String(record.email),
+      phone: record.phone != null ? String(record.phone) : undefined,
+      status: record.status as OrderStatus,
+      payment_status: record.payment_status as OrderPaymentStatus,
+      total: Number(record.total),
+      created_at: String(record.created_at),
+      item_count: itemCount,
+    } satisfies AdminOrderListItem;
+  });
+
+  return {
+    orders,
+    total: count ?? 0,
+    page,
+  };
+}
+
+export async function getAdminOrderByNumber(orderNumber: string) {
+  const supabase = await createClient();
+  const row = assertOk(
+    "orders.adminByNumber",
+    await supabase
+      .from("orders")
+      .select("*")
+      .eq("order_number", orderNumber)
+      .maybeSingle()
+  );
+
+  return row ? mapOrderRow(row) : null;
 }
 
