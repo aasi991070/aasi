@@ -18,6 +18,7 @@ export default async function NewCategoryPage({
   return (
     <>
       <PageHeader
+        as="h1"
         title="Add Category"
         subtitle="Create a new category"
         variant="onGradient"

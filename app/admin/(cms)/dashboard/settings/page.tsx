@@ -10,6 +10,7 @@ export default async function AdminSettingsPage() {
   return (
     <>
       <PageHeader
+        as="h1"
         title="Settings"
         subtitle="Store configuration and appearance"
         variant="onGradient"

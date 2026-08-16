@@ -112,7 +112,7 @@ export function CategoryNav({ items }: { items: NavItem[] }) {
     <>
       <nav
         ref={navRef}
-        aria-label="Categories"
+        aria-label="Primary"
         className="order-3 hidden md:block"
         onMouseEnter={cancelClose}
         onMouseLeave={scheduleClose}
@@ -217,7 +217,7 @@ export function CategoryNav({ items }: { items: NavItem[] }) {
           </div>
 
           <nav
-            aria-label="Categories"
+            aria-label="Primary"
             className="flex-1 overflow-y-auto px-6 pb-16"
           >
             <ul className="divide-y divide-store-border">

@@ -5,9 +5,9 @@ Branch: remediation · Started: 16 Aug 2026
 ## Git push cadence
 
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
-- **Last push after prompt:** never (branch not on remote yet)
-- **Prompts since last push:** 11, 12a, 12b, 12c (4 of 5)
-- **Next push after prompt:** 13-accessibility (5th prompt triggers push)
+- **Last push after prompt:** 13-accessibility
+- **Prompts since last push:** 0
+- **Next push after prompt:** 18a-category-query-and-pagination (after 14, 15, 16, 17, 18a)
 
 ## Deploy cadence
 
@@ -63,7 +63,7 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 12a-pdp-layout — **done**
 - [x] 12b-pdp-gallery-and-selectors — **done**
 - [x] 12c-remaining-storefront-surfaces — **done**
-- [ ] 13-accessibility
+- [x] 13-accessibility — **done**
 - [ ] 14-dead-code
 
 ## Phase 2 — Performance & SEO
@@ -327,12 +327,17 @@ hero are server components; upload pipeline downscales to WebP before storage.
 client `ProductPurchasePanel`; single `<h1>` on the PDP; sticky mobile purchase
 bar with `env(safe-area-inset-bottom)`; reviews restyled with distribution bars,
 sort and pagination. `SizeSelector` / `ColorSelector` / `ProductImageGallery`
+carousel. `SizeSelector` / `ColorSelector` / `ProductImageGallery`
 left for 12b (gallery still has `v18-card`).
 
 `12b` — gate green. Renamed gallery to client `ProductGallery`: all images in a
 scrollable thumb strip, keyboard nav, desktop zoom dialog, mobile scroll-snap
 carousel. `SizeSelector` and `ColorSelector` rewritten as radio groups with
 44px targets and store tokens; shared `useRadioGroup` hook for arrow-key nav.
+
+`12c` — gate green. Hero rebuilt (90vh, scrim overlay, display-font headline);
+`PageHeader` / `EmptyState` / `LoadingSpinner` gained `surface` prop; search
+results and category filter restyled; `grep v18- components/storefront/` is clean.
 
 ## Deferred
 

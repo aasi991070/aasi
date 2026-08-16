@@ -121,7 +121,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
             aria-label="Decrease quantity"
             disabled={quantity <= 1}
             onClick={() => setQuantity((current) => Math.max(1, current - 1))}
-            className="inline-flex size-11 items-center justify-center text-store-ink transition-opacity hover:opacity-60 disabled:opacity-30"
+            className="inline-flex size-11 items-center justify-center text-store-ink transition-opacity hover:opacity-60 disabled:cursor-not-allowed disabled:text-store-ink-muted"
           >
             <Minus className="size-4" aria-hidden="true" />
           </button>

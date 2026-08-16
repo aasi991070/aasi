@@ -61,7 +61,7 @@ export async function Navbar() {
           <Link
             href="/account"
             aria-label="Account"
-            className="inline-flex size-9 items-center justify-center text-store-ink transition-opacity duration-200 hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-store-accent-dark"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center text-store-ink transition-opacity duration-200 hover:opacity-60"
           >
             <User className="size-5" strokeWidth={1.25} aria-hidden="true" />
           </Link>

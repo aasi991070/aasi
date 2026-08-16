@@ -18,6 +18,7 @@ export function AdminDashboardClient({
   return (
     <>
       <PageHeader
+        as="h1"
         title="Dashboard"
         subtitle="Overview of your store performance"
         variant="onGradient"

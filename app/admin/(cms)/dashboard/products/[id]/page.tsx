@@ -22,6 +22,7 @@ export default async function EditProductPage({
   return (
     <>
       <PageHeader
+        as="h1"
         title="Edit Product"
         subtitle={product.name}
         variant="onGradient"

@@ -21,6 +21,7 @@ export default async function EditCategoryPage({
   return (
     <>
       <PageHeader
+        as="h1"
         title="Edit Category"
         subtitle={category.name}
         variant="onGradient"

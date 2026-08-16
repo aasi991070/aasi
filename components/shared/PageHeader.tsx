@@ -1,12 +1,14 @@
 import { cn } from "@/lib/utils/cn";
 
 type PageHeaderSurface = "store" | "admin";
+type PageHeaderTag = "h1" | "h2" | "h3";
 
 export interface PageHeaderProps {
   title: string;
   subtitle?: string;
   variant?: "onGradient" | "default";
   surface?: PageHeaderSurface;
+  as?: PageHeaderTag;
   action?: React.ReactNode;
   className?: string;
 }
@@ -16,6 +18,7 @@ export function PageHeader({
   subtitle,
   variant = "default",
   surface = "store",
+  as: Heading = "h2",
   action,
   className,
 }: PageHeaderProps) {
@@ -30,7 +33,7 @@ export function PageHeader({
       )}
     >
       <div>
-        <h1
+        <Heading
           className={cn(
             "leading-tight",
             isAdmin
@@ -42,7 +45,7 @@ export function PageHeader({
           )}
         >
           {title}
-        </h1>
+        </Heading>
         {subtitle ? (
           <p
             className={cn(

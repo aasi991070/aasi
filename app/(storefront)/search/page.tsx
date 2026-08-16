@@ -29,6 +29,7 @@ export default async function SearchPage({
   return (
     <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
       <PageHeader
+        as="h1"
         title={query ? `Results for "${query}"` : "Search"}
         subtitle={
           query

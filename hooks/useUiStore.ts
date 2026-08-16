@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { toast } from "sonner";
+import { useLiveRegionStore } from "@/hooks/useLiveRegionStore";
 
 interface UiStore {
   /** Admin rail expanded vs. icon-only. Desktop (`lg` and up) only. */
@@ -28,5 +29,7 @@ export const useUiStore = create<UiStore>((set) => ({
     if (type === "success") toast.success(message);
     else if (type === "error") toast.error(message);
     else toast.info(message);
+
+    useLiveRegionStore.getState().announce(message);
   },
 }));

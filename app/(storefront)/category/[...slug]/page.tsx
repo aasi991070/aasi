@@ -98,7 +98,7 @@ export default async function CategoryPage({
       {/* `onGradient` styling was white text for the old blue shell. */}
       <CategoryBreadcrumb items={breadcrumb} />
 
-      <PageHeader title={category.name} />
+      <PageHeader as="h1" title={category.name} />
       {descriptionParagraphs.length > 0 && (
         <div className="-mt-4 mb-6 space-y-2">
           {descriptionParagraphs.map((para, i) => (

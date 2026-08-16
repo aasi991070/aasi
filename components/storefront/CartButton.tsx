@@ -11,7 +11,7 @@ export function CartButton() {
     <Link
       href="/cart"
       aria-label={`Cart, ${itemCount} ${itemCount === 1 ? "item" : "items"}`}
-      className="relative inline-flex size-9 items-center justify-center text-store-ink transition-opacity duration-200 hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-store-accent-dark"
+      className="relative inline-flex min-h-11 min-w-11 items-center justify-center text-store-ink transition-opacity duration-200 hover:opacity-60"
     >
       <ShoppingBag className="size-5" strokeWidth={1.25} aria-hidden="true" />
       {itemCount > 0 && (

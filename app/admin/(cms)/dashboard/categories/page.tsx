@@ -14,6 +14,7 @@ export default function AdminCategoriesPage() {
   return (
     <>
       <PageHeader
+        as="h1"
         title="Categories"
         subtitle="Manage your 4-level category hierarchy"
         variant="onGradient"

@@ -203,8 +203,10 @@ export function ProductReviews({
                     disabled={currentPage <= 1}
                     onClick={() => setPage((value) => Math.max(1, value - 1))}
                     className={cn(
-                      "font-sans text-xs uppercase tracking-[0.2em] text-store-ink",
-                      currentPage <= 1 && "opacity-40"
+                      "inline-flex min-h-11 min-w-11 items-center justify-center font-sans text-xs uppercase tracking-[0.2em]",
+                      currentPage <= 1
+                        ? "cursor-not-allowed text-store-ink-muted"
+                        : "text-store-ink"
                     )}
                   >
                     Previous
@@ -216,8 +218,10 @@ export function ProductReviews({
                       setPage((value) => Math.min(totalPages, value + 1))
                     }
                     className={cn(
-                      "font-sans text-xs uppercase tracking-[0.2em] text-store-ink",
-                      currentPage >= totalPages && "opacity-40"
+                      "inline-flex min-h-11 min-w-11 items-center justify-center font-sans text-xs uppercase tracking-[0.2em]",
+                      currentPage >= totalPages
+                        ? "cursor-not-allowed text-store-ink-muted"
+                        : "text-store-ink"
                     )}
                   >
                     Next

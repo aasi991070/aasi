@@ -10,6 +10,7 @@ export default async function NewProductPage() {
   return (
     <>
       <PageHeader
+        as="h1"
         title="Add Product"
         subtitle="Create a new product listing"
         variant="onGradient"

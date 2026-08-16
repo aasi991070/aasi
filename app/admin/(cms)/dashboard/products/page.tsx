@@ -34,6 +34,7 @@ export default function AdminProductsPage() {
   return (
     <>
       <PageHeader
+        as="h1"
         title="Products"
         subtitle="Manage your product catalog"
         variant="onGradient"

@@ -230,12 +230,17 @@ export function ProductGallery({
                 role="tab"
                 aria-selected={safeIndex === index}
                 aria-label={`Show image ${index + 1}`}
+                className="inline-flex size-11 items-center justify-center"
                 onClick={() => goToImage(index)}
-                className={cn(
-                  "size-2.5 rounded-full transition-colors",
-                  safeIndex === index ? "bg-store-ink" : "bg-store-border"
-                )}
-              />
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "size-2.5 rounded-full transition-colors",
+                    safeIndex === index ? "bg-store-ink" : "bg-store-border"
+                  )}
+                />
+              </button>
             ))}
           </div>
         ) : null}
