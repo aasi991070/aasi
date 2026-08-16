@@ -267,6 +267,72 @@ export interface OrderItem {
   created_at: string;
 }
 
+export type PaymentProvider = "razorpay";
+
+export type PaymentStatus =
+  | "created"
+  | "authorized"
+  | "captured"
+  | "failed"
+  | "refunded"
+  | "partially_refunded";
+
+export interface Payment {
+  id: string;
+  order_id: string;
+  provider: PaymentProvider;
+  provider_order_id?: string | null;
+  provider_payment_id?: string | null;
+  provider_signature?: string | null;
+  amount: number;
+  status: PaymentStatus;
+  raw_payload?: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export type InventoryMoveReason =
+  | "order"
+  | "cancel"
+  | "return"
+  | "manual"
+  | "restock";
+
+export interface InventoryMove {
+  id: string;
+  product_id: string;
+  variant_id?: string | null;
+  delta: number;
+  reason: InventoryMoveReason;
+  order_id?: string | null;
+  note?: string | null;
+  created_at: string;
+}
+
+export type CouponType = "percent" | "fixed";
+
+export interface Coupon {
+  code: string;
+  type: CouponType;
+  value: number;
+  min_subtotal: number;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  usage_limit?: number | null;
+  used_count: number;
+  is_active: boolean;
+}
+
+export interface Shipment {
+  id: string;
+  order_id: string;
+  carrier?: string | null;
+  awb?: string | null;
+  status?: string | null;
+  shipped_at?: string | null;
+  delivered_at?: string | null;
+  created_at: string;
+}
+
 export interface DashboardStats {
   totalProducts: number;
   activeProducts: number;
