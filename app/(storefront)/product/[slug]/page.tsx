@@ -5,6 +5,7 @@ import { ProductGallery } from "@/components/storefront/ProductGallery";
 import { ProductInfo } from "@/components/storefront/ProductInfo";
 import { ProductPurchasePanel } from "@/components/storefront/ProductPurchasePanel";
 import { ProductReviews } from "@/components/storefront/ProductReviews";
+import { JsonLd } from "@/components/shared/JsonLd";
 import { buildProductMetadata } from "@/lib/metadata/product";
 import {
   getAllCategories,
@@ -22,6 +23,11 @@ import {
   findLevel1Category,
   getCategoryBreadcrumbPath,
 } from "@/lib/utils/getGenderCategory";
+import {
+  breadcrumbJsonLd,
+  categoriesToBreadcrumbPath,
+  productJsonLd,
+} from "@/lib/seo/jsonld";
 
 export const revalidate = REVALIDATE_SECONDS;
 export const dynamicParams = true;
@@ -75,7 +81,20 @@ export default async function ProductPage({
   })();
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
+    <>
+      <JsonLd
+        data={productJsonLd(
+          product,
+          reviewSummary,
+          reviews,
+          mergedBreadcrumb
+        )}
+      />
+      <JsonLd
+        data={breadcrumbJsonLd(categoriesToBreadcrumbPath(mergedBreadcrumb))}
+      />
+
+      <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
       <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
         <ProductGallery
           images={product.images}
@@ -102,6 +121,7 @@ export default async function ProductPage({
           <ProductGrid products={related} title="You May Also Like" />
         </div>
       ) : null}
-    </div>
+      </div>
+    </>
   );
 }

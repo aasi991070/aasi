@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { PRODUCTS_PAGE_SIZE, REVALIDATE_SECONDS } from "@/constants";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { JsonLd } from "@/components/shared/JsonLd";
 import { CategoryBreadcrumb } from "@/components/storefront/CategoryBreadcrumb";
 import { CategoryFilter } from "@/components/storefront/CategoryFilter";
 import { FilteredProductGrid } from "@/components/storefront/FilteredProductGrid";
@@ -22,6 +23,11 @@ import {
   parseCategoryPage,
   parseStorefrontFilters,
 } from "@/lib/utils/storefrontFilters";
+import {
+  breadcrumbJsonLd,
+  categoriesToBreadcrumbPath,
+  itemListJsonLd,
+} from "@/lib/seo/jsonld";
 import type { Category } from "@/types";
 
 function toUrlSearchParams(
@@ -138,7 +144,11 @@ export default async function CategoryPage({
   );
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
+    <>
+      <JsonLd data={breadcrumbJsonLd(categoriesToBreadcrumbPath(breadcrumb))} />
+      <JsonLd data={itemListJsonLd(initialResult.products)} />
+
+      <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
       <CategoryBreadcrumb items={breadcrumb} />
 
       <PageHeader as="h1" title={category.name} />
@@ -176,6 +186,7 @@ export default async function CategoryPage({
           </Suspense>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

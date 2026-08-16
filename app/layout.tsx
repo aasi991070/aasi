@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import { BRAND_NAME, BRAND_TAGLINE, BRAND_LOGO_PATH } from "@/constants";
+import { JsonLd } from "@/components/shared/JsonLd";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/seo/jsonld";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -44,6 +46,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${dmSans.variable} ${cormorant.variable}`}>
+        <JsonLd data={organizationJsonLd()} />
+        <JsonLd data={websiteJsonLd()} />
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -81,6 +81,9 @@ export const SOCIAL_LINKS: SocialLink[] = [
   { label: "Pinterest", href: "https://pinterest.com/aasi" },
 ];
 
+/** Placeholder until Arif fills legal/ops copy (prompt 09b). */
+export const SUPPORT_EMAIL = "[[SUPPORT_EMAIL]]";
+
 export type PaymentMethod = {
   label: string;
 };
