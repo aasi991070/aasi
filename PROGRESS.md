@@ -7,8 +7,8 @@ Branch: remediation · Started: 16 Aug 2026
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
 - **Last push after prompt:** 18a-category-query-and-pagination (attempt failed — GitHub 403 as `alwiarif46`)
 - **Last push after prompt:** 22a (attempt failed — GitHub 403 as `alwiarif46`)
-- **Prompts since last push:** 2 (22b, 23)
-- **Next push after prompt:** 24b (5th in batch: 22b, 23, 24a, 24b)
+- **Prompts since last push:** 4 (22b, 23, 24a, 24b)
+- **Next push after prompt:** 25 (5th in batch)
 - **Next push after prompt:** 19 (2nd in batch; push after 19 completes if batch is 18b–19–20–21–22a, or adjust when 5th lands)
 
 ## Deploy cadence
@@ -82,8 +82,8 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 22a-commerce-schema-core — **done**
 - [x] 22b-commerce-schema-support — **done**
 - [x] 23-variants-admin — **done**
-- [ ] 24a-cart-actions
-- [ ] 24b-cart-ui
+- [x] 24a-cart-actions — **done**
+- [x] 24b-cart-ui — **done**
 - [ ] 25-checkout
 - [ ] 26-razorpay
 - [ ] 27a-customer-accounts

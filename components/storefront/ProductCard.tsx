@@ -89,7 +89,12 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           "motion-reduce:transition-none"
         )}
       >
-        <AddToCartButton />
+        <AddToCartButton
+          productId={product.id}
+          disabled={soldOut}
+          label={soldOut ? "Sold out" : "Add to Cart"}
+          disabledReason={soldOut ? "This item is currently sold out." : undefined}
+        />
       </div>
     </article>
   );

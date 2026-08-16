@@ -10,6 +10,7 @@ const routes = [
   { name: "category", path: "/category/mens" },
   { name: "product", path: "/product/lawn" },
   { name: "search", path: "/search?q=shirt" },
+  { name: "cart", path: "/cart" },
 ];
 
 for (const route of routes) {

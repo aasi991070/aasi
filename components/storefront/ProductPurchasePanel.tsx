@@ -44,6 +44,19 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
   const sizeMissing = requiresSize && !selectedSize;
   const sizeUnavailable =
     selectedSize != null && unavailableSizes.includes(selectedSize);
+  const selectedVariant =
+    sizeMissing || sizeUnavailable
+      ? undefined
+      : product.variants?.find(
+          (entry) =>
+            entry.is_enabled &&
+            (!requiresSize || entry.size === selectedSize) &&
+            (!selectedColor ||
+              entry.color?.toLowerCase() === selectedColor?.toLowerCase())
+        );
+
+  const variantId = selectedVariant?.id ?? null;
+
   const cartDisabled = sizeMissing || sizeUnavailable || !product.in_stock;
 
   const cartLabel = sizeMissing
@@ -53,6 +66,14 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
       : !product.in_stock
         ? "Sold out"
         : "Add to Cart";
+
+  const cartDisabledReason = !product.in_stock
+    ? "This item is currently sold out."
+    : sizeMissing
+      ? "Choose a size to add this item to your bag."
+      : sizeUnavailable
+        ? "The selected size is out of stock for this colour."
+        : undefined;
 
   const stockMessage = (() => {
     if (!product.in_stock) return "Currently unavailable.";
@@ -145,7 +166,14 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
       </div>
 
       <div ref={purchaseAnchorRef} className="mt-8 space-y-3">
-        <AddToCartButton disabled={cartDisabled} label={cartLabel} />
+        <AddToCartButton
+          productId={product.id}
+          variantId={variantId}
+          qty={quantity}
+          disabled={cartDisabled}
+          label={cartLabel}
+          disabledReason={cartDisabledReason}
+        />
         <p className="font-sans text-sm text-store-ink-muted">{stockMessage}</p>
         <p className="font-sans text-sm text-store-ink-muted">
           Estimated delivery details appear at checkout.
@@ -164,7 +192,14 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
               </p>
             </div>
             <div className="w-40 shrink-0">
-              <AddToCartButton disabled={cartDisabled} label={cartLabel} />
+              <AddToCartButton
+                productId={product.id}
+                variantId={variantId}
+                qty={quantity}
+                disabled={cartDisabled}
+                label={cartLabel}
+                disabledReason={cartDisabledReason}
+              />
             </div>
           </div>
         </div>
