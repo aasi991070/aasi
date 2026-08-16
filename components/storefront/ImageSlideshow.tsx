@@ -109,24 +109,46 @@ export function ImageSlideshow({
           <div
             key={`${image.src}-${i}`}
             className={cn(
-              "absolute inset-0 transition-opacity duration-700 ease-out motion-reduce:transition-none",
+              "absolute inset-0 bg-store-ink transition-opacity duration-700 ease-out motion-reduce:transition-none",
               isActive ? "opacity-100" : "opacity-0"
             )}
             aria-hidden={!isActive}
           >
-            <Image
-              src={image.src}
-              alt={isActive ? image.alt : ""}
-              fill
-              priority={priorityFirst && i === 0}
-              className={cn(
-                "object-cover",
-                variant === "featured" ? "object-top" : "object-center"
-              )}
-              sizes={sizes}
-              placeholder="blur"
-              blurDataURL={BLUR_DATA_URL}
-            />
+            {variant === "hero" ? (
+              <>
+                {/* Soft full-bleed fill so portrait shots don’t leave empty bars */}
+                <Image
+                  src={image.src}
+                  alt=""
+                  fill
+                  priority={priorityFirst && i === 0}
+                  className="object-cover opacity-40 blur-2xl scale-110"
+                  sizes={sizes}
+                  aria-hidden="true"
+                />
+                <Image
+                  src={image.src}
+                  alt={isActive ? image.alt : ""}
+                  fill
+                  priority={priorityFirst && i === 0}
+                  className="object-contain object-center"
+                  sizes={sizes}
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
+                />
+              </>
+            ) : (
+              <Image
+                src={image.src}
+                alt={isActive ? image.alt : ""}
+                fill
+                priority={priorityFirst && i === 0}
+                className="object-cover object-top"
+                sizes={sizes}
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
+              />
+            )}
           </div>
         );
       })}
