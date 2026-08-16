@@ -28,9 +28,14 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
     () =>
       product.sizes.filter((size) => {
         const variant = product.variants?.find(
-          (entry) => entry.size === size && entry.color === selectedColor
+          (entry) =>
+            entry.size === size &&
+            entry.color?.toLowerCase() === selectedColor?.toLowerCase() &&
+            entry.is_enabled
         );
-        return variant ? variant.stock_count <= 0 : !product.in_stock;
+        if (variant) return variant.stock_count <= 0;
+        if (product.variants?.some((entry) => entry.is_enabled)) return true;
+        return !product.in_stock;
       }),
     [product, selectedColor]
   );

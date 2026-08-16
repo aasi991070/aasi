@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +13,19 @@ import {
   findLevel1Category,
   genderFromCategorySlug,
 } from "@/lib/utils/getGenderCategory";
+import {
+  reconcileVariants,
+  variantsFromProduct,
+  variantsWithStockBeingRemoved,
+} from "@/lib/utils/variantMatrix";
 import { useUiStore } from "@/hooks/useUiStore";
-import { saveProductAction } from "@/lib/actions/catalog";
+import { saveProductAction, saveVariantsAction } from "@/lib/actions/catalog";
 import { slugify } from "@/lib/utils/slugify";
 import { productSchema, type ProductFormValues } from "@/lib/validation/catalog";
-import type { Category, Product } from "@/types";
+import type { Category, Product, VariantFormInput } from "@/types";
 import { ImageUploader } from "./ImageUploader";
+import { TagInput } from "./TagInput";
+import { VariantMatrix } from "./VariantMatrix";
 
 interface ProductFormProps {
   existing?: Product;
@@ -29,6 +36,16 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
   const router = useRouter();
   const { showToast } = useUiStore();
   const [isNavigating, startTransition] = useTransition();
+  const [variants, setVariants] = useState<VariantFormInput[]>(() =>
+    existing
+      ? variantsFromProduct(
+          existing.sizes,
+          existing.colors,
+          existing.slug,
+          existing.variants ?? []
+        )
+      : []
+  );
 
   const flatCategories = useMemo(() => {
     const flatten = (cats: Category[]): Category[] =>
@@ -41,6 +58,8 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
     handleSubmit,
     watch,
     setValue,
+    control,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -60,13 +79,29 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
       is_featured: existing?.is_featured ?? false,
       is_active: existing?.is_active ?? true,
       tags: existing?.tags ?? [],
+      meta_title: existing?.meta_title ?? "",
+      meta_description: existing?.meta_description ?? "",
+      image_alts: existing?.image_alts ?? [],
     },
   });
 
   const name = watch("name");
+  const slug = watch("slug");
   const categoryId = watch("category_id");
+  const gender = watch("gender");
   const sizes = watch("sizes");
+  const colors = watch("colors");
   const images = watch("images");
+  const imageAlts = watch("image_alts");
+
+  const managesVariants = Boolean(existing && sizes.length && colors.length);
+  const variantStockTotal = useMemo(
+    () =>
+      variants
+        .filter((variant) => variant.is_enabled)
+        .reduce((sum, variant) => sum + variant.stock_count, 0),
+    [variants]
+  );
 
   useEffect(() => {
     if (!existing && name) {
@@ -78,20 +113,52 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
     if (!categoryId) return;
     const l1 = findLevel1Category(categoryId, flatCategories);
     if (!l1) return;
-    const gender = genderFromCategorySlug(l1.slug);
-    if (gender) setValue("gender", gender);
+    const nextGender = genderFromCategorySlug(l1.slug);
+    if (nextGender) setValue("gender", nextGender);
   }, [categoryId, flatCategories, setValue]);
 
-  // The action re-checks admin authorisation, re-validates, writes, and
-  // invalidates the affected cache tags server-side. The old code posted to
-  // /api/revalidate from here without the secret header, so the request 401'd
-  // and the failure was never surfaced.
+  useEffect(() => {
+    if (!managesVariants) return;
+    setValue("stock_count", variantStockTotal);
+  }, [managesVariants, setValue, variantStockTotal]);
+
+  useEffect(() => {
+    if (!existing || !sizes.length || !colors.length) {
+      setVariants([]);
+      return;
+    }
+
+    setVariants((current) =>
+      reconcileVariants(sizes, colors, existing.slug, current)
+    );
+  }, [sizes, colors, existing]);
+
+  useEffect(() => {
+    const current = getValues("image_alts");
+    setValue(
+      "image_alts",
+      images.map((_, index) => current[index] ?? "")
+    );
+  }, [images, getValues, setValue]);
+
   const onSubmit = async (data: ProductFormValues) => {
-    const result = await saveProductAction(data, existing?.id);
+    const payload = managesVariants
+      ? { ...data, stock_count: variantStockTotal }
+      : data;
+
+    const result = await saveProductAction(payload, existing?.id);
 
     if (!result.ok) {
       showToast(result.message, "error");
       return;
+    }
+
+    if (existing && managesVariants) {
+      const variantResult = await saveVariantsAction(result.data.id, variants);
+      if (!variantResult.ok) {
+        showToast(variantResult.message, "error");
+        return;
+      }
     }
 
     showToast(
@@ -107,11 +174,43 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
 
   const busy = isSubmitting || isNavigating;
 
+  const applySizeChange = (nextSizes: string[]) => {
+    if (existing && colors.length) {
+      const removed = variantsWithStockBeingRemoved(variants, nextSizes, colors);
+      if (
+        removed.length &&
+        !window.confirm(
+          `Removing sizes will drop ${removed.length} variant(s) with stock. Continue?`
+        )
+      ) {
+        return;
+      }
+    }
+
+    setValue("sizes", nextSizes);
+  };
+
+  const applyColorChange = (nextColors: string[]) => {
+    if (existing && sizes.length) {
+      const removed = variantsWithStockBeingRemoved(variants, sizes, nextColors);
+      if (
+        removed.length &&
+        !window.confirm(
+          `Removing colours will drop ${removed.length} variant(s) with stock. Continue?`
+        )
+      ) {
+        return;
+      }
+    }
+
+    setValue("colors", nextColors);
+  };
+
   const toggleSize = (size: string) => {
-    setValue(
-      "sizes",
-      sizes.includes(size) ? sizes.filter((s) => s !== size) : [...sizes, size]
-    );
+    const nextSizes = sizes.includes(size)
+      ? sizes.filter((entry) => entry !== size)
+      : [...sizes, size];
+    applySizeChange(nextSizes);
   };
 
   return (
@@ -120,7 +219,9 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
           <Input id="name" {...register("name")} className="rounded-[var(--radius-input)]" />
-          {errors.name && <p className="text-xs text-v18-danger">{errors.name.message}</p>}
+          {errors.name ? (
+            <p className="text-xs text-v18-danger">{errors.name.message}</p>
+          ) : null}
         </div>
 
         <div className="space-y-2">
@@ -134,6 +235,16 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
           <p className="text-xs v18-text-muted">
             Use a blank line between paragraphs.
           </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="meta_title">SEO title</Label>
+          <Input id="meta_title" {...register("meta_title")} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="meta_description">SEO description</Label>
+          <Textarea id="meta_description" rows={3} {...register("meta_description")} />
         </div>
 
         <div className="space-y-2">
@@ -152,7 +263,19 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
           </select>
         </div>
 
-        <input type="hidden" {...register("gender")} />
+        <div className="space-y-2">
+          <Label htmlFor="gender">Gender</Label>
+          <Input
+            id="gender"
+            value={gender ?? ""}
+            disabled
+            readOnly
+            className="bg-slate-50"
+          />
+          <p className="text-xs v18-text-muted">
+            Derived from the level-1 category. Change the category to update it.
+          </p>
+        </div>
 
         <div className="space-y-2">
           <Label>Sizes</Label>
@@ -175,36 +298,35 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="colors">Colors (comma-separated)</Label>
-          <Input
-            id="colors"
-            defaultValue={existing?.colors.join(", ") ?? ""}
-            onChange={(e) =>
-              setValue(
-                "colors",
-                e.target.value
-                  .split(",")
-                  .map((c) => c.trim())
-                  .filter(Boolean)
-              )
-            }
+          <Label htmlFor="colors">Colours</Label>
+          <Controller
+            name="colors"
+            control={control}
+            render={({ field }) => (
+              <TagInput
+                id="colors"
+                value={field.value}
+                onChange={applyColorChange}
+                placeholder="Add a colour"
+                normalize={(color) => color.toLowerCase()}
+              />
+            )}
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="tags">Tags (comma-separated)</Label>
-          <Input
-            id="tags"
-            defaultValue={existing?.tags.join(", ") ?? ""}
-            onChange={(e) =>
-              setValue(
-                "tags",
-                e.target.value
-                  .split(",")
-                  .map((t) => t.trim())
-                  .filter(Boolean)
-              )
-            }
+          <Label htmlFor="tags">Tags</Label>
+          <Controller
+            name="tags"
+            control={control}
+            render={({ field }) => (
+              <TagInput
+                id="tags"
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="Add a tag"
+              />
+            )}
           />
         </div>
       </div>
@@ -212,8 +334,26 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
       <div className="space-y-6">
         <div className="v18-card p-6">
           <Label className="mb-4 block">Images</Label>
-          <ImageUploader value={images} onChange={(paths) => setValue("images", paths)} />
+          <ImageUploader
+            value={images}
+            onChange={(paths) => setValue("images", paths)}
+            altTexts={imageAlts}
+            onAltTextsChange={(alts) => setValue("image_alts", alts)}
+          />
         </div>
+
+        {existing && sizes.length && colors.length ? (
+          <div className="space-y-4 v18-card p-6">
+            <Label className="block">Variant stock</Label>
+            <VariantMatrix
+              slug={slug || existing.slug}
+              sizes={sizes}
+              colors={colors}
+              value={variants}
+              onChange={setVariants}
+            />
+          </div>
+        ) : null}
 
         <div className="space-y-4 v18-card p-6">
           <div className="space-y-2">
@@ -223,12 +363,24 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
           <div className="space-y-2">
             <Label htmlFor="sale_price">Sale Price</Label>
             <Input id="sale_price" type="number" step="0.01" {...register("sale_price")} />
+            {errors.sale_price ? (
+              <p className="text-xs text-v18-danger">{errors.sale_price.message}</p>
+            ) : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="stock_count">Stock Count</Label>
-            <Input id="stock_count" type="number" {...register("stock_count")} />
+            <Input
+              id="stock_count"
+              type="number"
+              readOnly={managesVariants}
+              disabled={managesVariants}
+              {...register("stock_count")}
+              className={managesVariants ? "bg-slate-50" : undefined}
+            />
             <p className="text-xs v18-text-muted">
-              In-stock status is derived from stock count.
+              {managesVariants
+                ? "Summed from enabled variants and synced on save."
+                : "In-stock status is derived from stock count."}
             </p>
           </div>
           <label className="flex items-center gap-2 text-sm">

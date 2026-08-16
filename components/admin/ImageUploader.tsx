@@ -4,18 +4,23 @@ import { useCallback, useState } from "react";
 import { Upload, X } from "lucide-react";
 import { RemoteImageWithFallback } from "@/components/shared/RemoteImageWithFallback";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { cn } from "@/lib/utils/cn";
 
 interface ImageUploaderProps {
   value: string[];
   onChange: (paths: string[]) => void;
+  altTexts?: string[];
+  onAltTextsChange?: (alts: string[]) => void;
   folder?: string;
 }
 
 export function ImageUploader({
   value,
   onChange,
+  altTexts = [],
+  onAltTextsChange,
   folder = "products",
 }: ImageUploaderProps) {
   const { upload, remove, toPublicUrl, uploading, progress, error, clearError } =
@@ -30,20 +35,24 @@ export function ImageUploader({
       try {
         const paths = await upload(fileArray);
         onChange([...value, ...paths]);
+        onAltTextsChange?.([...altTexts, ...paths.map(() => "")]);
       } catch {
         // Error state is surfaced via `error` from the hook.
       }
     },
-    [clearError, upload, value, onChange]
+    [clearError, upload, value, onChange, altTexts, onAltTextsChange]
   );
 
-  const handleRemove = async (path: string) => {
+  const handleRemove = async (path: string, index: number) => {
     try {
       await remove(path);
     } catch {
       // Still remove from form if storage delete fails
     }
     onChange(value.filter((p) => p !== path));
+    if (onAltTextsChange) {
+      onAltTextsChange(altTexts.filter((_, altIndex) => altIndex !== index));
+    }
   };
 
   return (
@@ -101,26 +110,37 @@ export function ImageUploader({
       </div>
 
       {value.length > 0 && (
-        <div className="grid grid-cols-3 gap-3">
-          {value.map((path) => (
-            <div
-              key={path}
-              className="group relative aspect-square overflow-hidden rounded-lg bg-slate-100"
-            >
-              <RemoteImageWithFallback
-                src={toPublicUrl(path)}
-                alt="Uploaded"
-                fill
-                className="object-cover"
-                sizes="120px"
-              />
-              <button
-                type="button"
-                onClick={() => handleRemove(path)}
-                className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-              >
-                <X className="size-3" />
-              </button>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {value.map((path, index) => (
+            <div key={path} className="space-y-2">
+              <div className="group relative aspect-square overflow-hidden rounded-lg bg-slate-100">
+                <RemoteImageWithFallback
+                  src={toPublicUrl(path)}
+                  alt={altTexts[index]?.trim() || "Uploaded product image"}
+                  fill
+                  className="object-cover"
+                  sizes="120px"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemove(path, index)}
+                  className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+              {onAltTextsChange ? (
+                <Input
+                  value={altTexts[index] ?? ""}
+                  onChange={(event) => {
+                    const next = [...altTexts];
+                    next[index] = event.target.value;
+                    onAltTextsChange(next);
+                  }}
+                  placeholder="Alt text"
+                  className="h-8 text-xs"
+                />
+              ) : null}
             </div>
           ))}
         </div>

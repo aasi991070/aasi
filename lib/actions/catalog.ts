@@ -14,12 +14,14 @@ import {
   createProduct,
   deleteProduct,
   getProductById,
+  saveProductVariants,
   updateProduct,
 } from "@/lib/queries/products";
 import {
   categorySchema,
   formatZodError,
   productSchema,
+  variantsSchema,
   type ActionResult,
 } from "@/lib/validation/catalog";
 import type { CategoryFormData, Gender, ProductFormData } from "@/types";
@@ -79,6 +81,10 @@ export async function saveProductAction(
     thumbnail_url: values.images[0] ?? values.thumbnail_url,
     sale_price: values.sale_price || undefined,
     category_id: values.category_id || undefined,
+    colors: values.colors.map((color) => color.toLowerCase()),
+    meta_title: values.meta_title?.trim() || undefined,
+    meta_description: values.meta_description?.trim() || undefined,
+    image_alts: values.image_alts,
   };
 
   try {
@@ -102,6 +108,36 @@ export async function saveProductAction(
           ? "Could not update the product. Your changes were not saved."
           : "Could not create the product. Your changes were not saved."
       ),
+    };
+  }
+}
+
+export async function saveVariantsAction(
+  productId: string,
+  input: unknown
+): Promise<ActionResult<undefined>> {
+  const admin = await requireAdmin();
+  if (!admin.ok) return { ok: false, message: admin.message };
+
+  const parsed = variantsSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, message: formatZodError(parsed.error) };
+  }
+
+  try {
+    const product = await getProductById(productId);
+    if (!product) {
+      return { ok: false, message: "That product no longer exists." };
+    }
+
+    await saveProductVariants(productId, parsed.data);
+    revalidateProduct([product.slug]);
+
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return {
+      ok: false,
+      message: failureMessage(error, "Could not save product variants."),
     };
   }
 }

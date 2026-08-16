@@ -17,7 +17,9 @@ import type {
   Product,
   ProductFilters,
   ProductFormData,
+  ProductVariant,
   StorefrontFilters,
+  VariantFormInput,
 } from "@/types";
 
 /**
@@ -40,16 +42,47 @@ function cachedProductQuery<TArgs extends unknown[], TResult>(
     })();
 }
 
-function mapProduct(row: Record<string, unknown>): Product {
-  const base = row as unknown as Product;
+function mapVariant(row: Record<string, unknown>): ProductVariant {
   return {
-    ...base,
+    id: String(row.id),
+    product_id: String(row.product_id),
+    size: row.size != null ? String(row.size) : undefined,
+    color: row.color != null ? String(row.color) : undefined,
+    stock_count: Number(row.stock_count ?? 0),
+    sku: row.sku != null ? String(row.sku) : undefined,
+    price_override:
+      row.price_override != null ? Number(row.price_override) : undefined,
+    is_enabled: row.is_enabled !== false,
+    created_at: String(row.created_at),
+  };
+}
+
+function mapProductRow(
+  row: Record<string, unknown>,
+  options?: { storefront?: boolean }
+): Product {
+  const variants = Array.isArray(row.variants)
+    ? (row.variants as Record<string, unknown>[])
+        .map(mapVariant)
+        .filter((variant) => !options?.storefront || variant.is_enabled)
+    : undefined;
+
+  return {
+    ...(row as unknown as Product),
     price: Number(row.price),
     sale_price: row.sale_price != null ? Number(row.sale_price) : undefined,
     images: Array.isArray(row.images) ? (row.images as string[]) : [],
     colors: Array.isArray(row.colors) ? (row.colors as string[]) : [],
     sizes: Array.isArray(row.sizes) ? (row.sizes as string[]) : [],
     tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
+    image_alts: Array.isArray(row.image_alts)
+      ? (row.image_alts as string[])
+      : [],
+    meta_title:
+      row.meta_title != null ? String(row.meta_title) : undefined,
+    meta_description:
+      row.meta_description != null ? String(row.meta_description) : undefined,
+    variants,
   };
 }
 
@@ -74,7 +107,7 @@ export async function getProducts(
       await supabase.rpc("search_products", { q: trimmed, lim: 100 })
     );
 
-    let products = ((data ?? []) as Record<string, unknown>[]).map(mapProduct);
+    let products = ((data ?? []) as Record<string, unknown>[]).map((row) => mapProductRow(row));
 
     if (filters.categoryId) {
       products = products.filter(
@@ -135,7 +168,7 @@ export async function getProducts(
   assertOk("products.list", { data, error });
 
   return {
-    products: (data ?? []).map(mapProduct),
+    products: (data ?? []).map((row) => mapProductRow(row)),
     total: count ?? 0,
   };
 }
@@ -158,7 +191,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
       );
 
       // null here means no such active product — a real answer, not a failure.
-      return data ? mapProduct(data) : null;
+      return data ? mapProductRow(data, { storefront: true }) : null;
     },
     [`product:${slug}`]
   )(slug);
@@ -175,7 +208,185 @@ export async function getProductById(id: string): Promise<Product | null> {
       .maybeSingle()
   );
 
-  return data ? mapProduct(data) : null;
+  return data ? mapProductRow(data) : null;
+}
+
+export async function getVariantsByProductId(
+  productId: string
+): Promise<ProductVariant[]> {
+  const supabase = await createClient();
+  const data = assertOk(
+    "products.variantsByProductId",
+    await supabase
+      .from("product_variants")
+      .select("*")
+      .eq("product_id", productId)
+      .order("size")
+      .order("color")
+  );
+
+  return (data ?? []).map(mapVariant);
+}
+
+function isMissingSaveVariantsRpc(error: { code?: string; message?: string }) {
+  return (
+    error.code === "PGRST202" ||
+    error.message?.includes("save_product_variants")
+  );
+}
+
+async function saveProductVariantsFallback(
+  productId: string,
+  variants: VariantFormInput[]
+): Promise<void> {
+  const supabase = await createClient();
+  const keptKeys = new Set(
+    variants.map((variant) => `${variant.size}::${variant.color.toLowerCase()}`)
+  );
+
+  for (const variant of variants) {
+    const payload = {
+      product_id: productId,
+      size: variant.size,
+      color: variant.color.toLowerCase(),
+      stock_count: variant.stock_count,
+      sku: variant.sku || null,
+      price_override: variant.price_override ?? null,
+      is_enabled: variant.is_enabled,
+    };
+
+    if (variant.id) {
+      assertOk(
+        "products.variants.update",
+        await supabase
+          .from("product_variants")
+          .update(payload)
+          .eq("id", variant.id)
+          .eq("product_id", productId)
+      );
+      continue;
+    }
+
+    const existing = assertOk(
+      "products.variants.lookup",
+      await supabase
+        .from("product_variants")
+        .select("id")
+        .eq("product_id", productId)
+        .eq("size", variant.size)
+        .eq("color", variant.color.toLowerCase())
+        .maybeSingle()
+    );
+
+    if (existing?.id) {
+      assertOk(
+        "products.variants.updateByKey",
+        await supabase
+          .from("product_variants")
+          .update(payload)
+          .eq("id", existing.id)
+      );
+    } else {
+      assertOk(
+        "products.variants.insert",
+        await supabase.from("product_variants").insert(payload)
+      );
+    }
+  }
+
+  const staleRows = assertOk(
+    "products.variants.listForProduct",
+    await supabase
+      .from("product_variants")
+      .select("id, size, color")
+      .eq("product_id", productId)
+  );
+
+  for (const row of staleRows ?? []) {
+    const key = `${String(row.size)}::${String(row.color).toLowerCase()}`;
+    if (keptKeys.has(key)) continue;
+
+    const variantId = String(row.id);
+    const orderRefs = assertOk(
+      "products.variants.orderRefs",
+      await supabase
+        .from("order_items")
+        .select("id")
+        .eq("variant_id", variantId)
+        .limit(1)
+    );
+
+    if ((orderRefs ?? []).length) {
+      assertOk(
+        "products.variants.softDisable",
+        await supabase
+          .from("product_variants")
+          .update({ is_enabled: false, stock_count: 0 })
+          .eq("id", variantId)
+      );
+    } else {
+      assertOk(
+        "products.variants.delete",
+        await supabase.from("product_variants").delete().eq("id", variantId)
+      );
+    }
+  }
+
+  const enabledRows = assertOk(
+    "products.variants.sumStock",
+    await supabase
+      .from("product_variants")
+      .select("stock_count")
+      .eq("product_id", productId)
+      .eq("is_enabled", true)
+  );
+
+  const stockTotal = (enabledRows ?? []).reduce(
+    (sum, row) => sum + Number(row.stock_count ?? 0),
+    0
+  );
+
+  assertOk(
+    "products.variants.syncStock",
+    await supabase
+      .from("products")
+      .update({ stock_count: stockTotal, updated_at: new Date().toISOString() })
+      .eq("id", productId)
+  );
+}
+
+export async function saveProductVariants(
+  productId: string,
+  variants: VariantFormInput[]
+): Promise<void> {
+  const supabase = await createClient();
+  const payload = variants.map((variant) => ({
+    id: variant.id ?? null,
+    size: variant.size,
+    color: variant.color.toLowerCase(),
+    stock_count: variant.stock_count,
+    sku: variant.sku ?? null,
+    price_override: variant.price_override ?? null,
+    is_enabled: variant.is_enabled,
+  }));
+
+  const { error } = await supabase.rpc("save_product_variants", {
+    p_product_id: productId,
+    p_variants: payload,
+  });
+
+  if (error) {
+    if (isMissingSaveVariantsRpc(error)) {
+      console.warn(
+        "[products] save_product_variants RPC missing — falling back to sequential writes until migration 010 runs",
+        error.message
+      );
+      await saveProductVariantsFallback(productId, variants);
+      return;
+    }
+
+    assertOk("products.variants.save", { data: null, error });
+  }
 }
 
 export const getFeaturedProducts = cachedProductQuery(
@@ -193,7 +404,7 @@ export const getFeaturedProducts = cachedProductQuery(
         .limit(limit)
     );
 
-    return (data ?? []).map(mapProduct);
+    return (data ?? []).map((row) => mapProductRow(row));
   }
 );
 
@@ -208,7 +419,7 @@ export async function getRecentProducts(limit = 10): Promise<Product[]> {
       .limit(limit)
   );
 
-  return (data ?? []).map(mapProduct);
+  return (data ?? []).map((row) => mapProductRow(row));
 }
 
 export const getNewArrivals = cachedProductQuery(
@@ -225,7 +436,7 @@ export const getNewArrivals = cachedProductQuery(
         .limit(limit)
     );
 
-    return (data ?? []).map(mapProduct);
+    return (data ?? []).map((row) => mapProductRow(row));
   }
 );
 
@@ -419,7 +630,7 @@ export async function getProductsByCategory(
     );
 
     const productIds = ((rpcData ?? []) as Record<string, unknown>[])
-      .map(mapProduct)
+      .map((row) => mapProductRow(row))
       .filter(
         (product) =>
           product.category_id && categoryIds.includes(product.category_id)
@@ -443,7 +654,7 @@ export async function getProductsByCategory(
   assertOk("products.byCategory", { data, error });
 
   return {
-    products: ((data ?? []) as Record<string, unknown>[]).map(mapProduct),
+    products: ((data ?? []) as Record<string, unknown>[]).map((row) => mapProductRow(row)),
     total: count ?? 0,
     page,
     pageSize,
@@ -514,7 +725,7 @@ const fetchRelatedProducts = cachedProductQuery(
         .limit(limit)
     );
 
-    return (data ?? []).map(mapProduct);
+    return (data ?? []).map((row) => mapProductRow(row));
   }
 );
 
@@ -568,7 +779,7 @@ export async function createProduct(data: ProductFormData): Promise<Product> {
     await supabase.from("products").insert(data).select().single()
   );
 
-  return mapProduct(created);
+  return mapProductRow(created);
 }
 
 export async function updateProduct(
@@ -586,7 +797,7 @@ export async function updateProduct(
       .single()
   );
 
-  return mapProduct(updated);
+  return mapProductRow(updated);
 }
 
 export async function deleteProduct(id: string): Promise<void> {

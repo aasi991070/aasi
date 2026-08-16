@@ -34,6 +34,9 @@ export interface Product {
   is_featured: boolean;
   is_active: boolean;
   tags: string[];
+  meta_title?: string;
+  meta_description?: string;
+  image_alts?: string[];
   created_at: string;
   updated_at: string;
   variants?: ProductVariant[];
@@ -46,7 +49,19 @@ export interface ProductVariant {
   color?: string;
   stock_count: number;
   sku?: string;
+  price_override?: number;
+  is_enabled: boolean;
   created_at: string;
+}
+
+export interface VariantFormInput {
+  id?: string;
+  size: string;
+  color: string;
+  stock_count: number;
+  sku?: string;
+  price_override?: number | null;
+  is_enabled: boolean;
 }
 
 export interface ProductFilters {
@@ -152,6 +167,9 @@ export interface ProductFormData {
   is_featured: boolean;
   is_active: boolean;
   tags: string[];
+  meta_title?: string;
+  meta_description?: string;
+  image_alts?: string[];
 }
 
 export type CartStatus = "active" | "converted" | "abandoned";

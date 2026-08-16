@@ -17,12 +17,14 @@ interface ProductGalleryProps {
   images?: string[] | null;
   thumbnailUrl?: string | null;
   productName: string;
+  imageAlts?: string[] | null;
 }
 
 export function ProductGallery({
   images,
   thumbnailUrl,
   productName,
+  imageAlts,
 }: ProductGalleryProps) {
   const resolvedImages = resolveProductImageList({
     images,
@@ -37,6 +39,10 @@ export function ProductGallery({
 
   const imageCount = resolvedImages.length;
   const safeIndex = Math.min(activeIndex, Math.max(0, imageCount - 1));
+
+  const altForIndex = (index: number) =>
+    imageAlts?.[index]?.trim() ||
+    `${productName} — image ${index + 1}`;
 
   const goToImage = useCallback(
     (index: number) => {
@@ -141,7 +147,7 @@ export function ProductGallery({
         >
           <Image
             src={activeSrc}
-            alt={`${productName} — image ${safeIndex + 1}`}
+            alt={altForIndex(safeIndex)}
             fill
             className="object-cover"
             sizes="(max-width: 1024px) 100vw, 50vw"
@@ -176,7 +182,7 @@ export function ProductGallery({
               >
                 <Image
                   src={src}
-                  alt={`${productName} thumbnail ${index + 1}`}
+                  alt={altForIndex(index)}
                   fill
                   className="object-cover"
                   sizes="80px"
@@ -205,7 +211,7 @@ export function ProductGallery({
             >
               <Image
                 src={src}
-                alt={`${productName} — image ${index + 1}`}
+                alt={altForIndex(index)}
                 fill
                 className="object-cover"
                 sizes="100vw"
@@ -254,7 +260,7 @@ export function ProductGallery({
           <div className="relative aspect-[3/4] w-full max-h-[85vh] bg-store-surface">
             <Image
               src={activeSrc}
-              alt={`${productName} — image ${safeIndex + 1}`}
+              alt={altForIndex(safeIndex)}
               fill
               className="object-contain"
               sizes="100vw"

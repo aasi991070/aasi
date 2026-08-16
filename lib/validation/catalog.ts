@@ -7,26 +7,62 @@ import { z } from "zod";
  * convenience, not a control.
  */
 
-export const productSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  slug: z.string().min(1, "Slug is required"),
-  description: z.string().optional(),
-  price: z.coerce.number().min(0),
-  sale_price: z.coerce.number().optional(),
-  category_id: z.string().optional(),
-  gender: z.preprocess(
-    (val) => (val === "" || val == null ? undefined : val),
-    z.enum(["men", "women", "unisex"]).optional()
-  ),
-  sizes: z.array(z.string()),
-  colors: z.array(z.string()),
-  images: z.array(z.string()),
-  thumbnail_url: z.string().optional(),
+export const productSchema = z
+  .object({
+    name: z.string().min(1, "Name is required"),
+    slug: z.string().min(1, "Slug is required"),
+    description: z.string().optional(),
+    price: z.coerce.number().min(0),
+    sale_price: z.preprocess(
+      (val) =>
+        val === "" || val == null || (typeof val === "number" && Number.isNaN(val))
+          ? undefined
+          : val,
+      z.coerce.number().min(0).optional()
+    ),
+    category_id: z.string().optional(),
+    gender: z.preprocess(
+      (val) => (val === "" || val == null ? undefined : val),
+      z.enum(["men", "women", "unisex"]).optional()
+    ),
+    sizes: z.array(z.string()),
+    colors: z.array(z.string()),
+    images: z.array(z.string()),
+    thumbnail_url: z.string().optional(),
+    stock_count: z.coerce.number().min(0),
+    is_featured: z.boolean(),
+    is_active: z.boolean(),
+    tags: z.array(z.string()),
+    meta_title: z.string().optional(),
+    meta_description: z.string().optional(),
+    image_alts: z.array(z.string()),
+  })
+  .refine(
+    (data) =>
+      data.sale_price == null || data.sale_price === undefined || data.sale_price < data.price,
+    {
+      message: "Sale price must be less than the regular price",
+      path: ["sale_price"],
+    }
+  );
+
+export const variantInputSchema = z.object({
+  id: z.string().uuid().optional(),
+  size: z.string().min(1),
+  color: z.string().min(1),
   stock_count: z.coerce.number().min(0),
-  is_featured: z.boolean(),
-  is_active: z.boolean(),
-  tags: z.array(z.string()),
+  sku: z.string().optional(),
+  price_override: z.preprocess(
+    (val) =>
+      val === "" || val == null || (typeof val === "number" && Number.isNaN(val))
+        ? undefined
+        : val,
+    z.coerce.number().min(0).optional().nullable()
+  ),
+  is_enabled: z.boolean(),
 });
+
+export const variantsSchema = z.array(variantInputSchema);
 
 export type ProductFormValues = z.infer<typeof productSchema>;
 

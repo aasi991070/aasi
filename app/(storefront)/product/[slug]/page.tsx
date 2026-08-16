@@ -100,6 +100,7 @@ export default async function ProductPage({
           images={product.images}
           thumbnailUrl={product.thumbnail_url}
           productName={product.name}
+          imageAlts={product.image_alts}
         />
 
         <ProductInfo

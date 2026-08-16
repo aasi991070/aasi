@@ -7,8 +7,8 @@ Branch: remediation · Started: 16 Aug 2026
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
 - **Last push after prompt:** 18a-category-query-and-pagination (attempt failed — GitHub 403 as `alwiarif46`)
 - **Last push after prompt:** 22a (attempt failed — GitHub 403 as `alwiarif46`)
-- **Prompts since last push:** 1 (22b)
-- **Next push after prompt:** 23 (2nd in batch)
+- **Prompts since last push:** 2 (22b, 23)
+- **Next push after prompt:** 24b (5th in batch: 22b, 23, 24a, 24b)
 - **Next push after prompt:** 19 (2nd in batch; push after 19 completes if batch is 18b–19–20–21–22a, or adjust when 5th lands)
 
 ## Deploy cadence
@@ -81,7 +81,7 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 ## Phase 3 — Commerce
 - [x] 22a-commerce-schema-core — **done**
 - [x] 22b-commerce-schema-support — **done**
-- [ ] 23-variants-admin
+- [x] 23-variants-admin — **done**
 - [ ] 24a-cart-actions
 - [ ] 24b-cart-ui
 - [ ] 25-checkout
@@ -106,6 +106,10 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | `004_review_moderation.sql` | 02 | ☐ |
 | `005_site_content.sql` | 09a | ☐ |
 | `006_search_and_indexes.sql` | 17 | ☐ |
+| `007_reorder_categories.sql` | 19 | ☐ |
+| `008_commerce_core.sql` | 22a | ☐ |
+| `009_commerce_support.sql` | 22b | ☐ |
+| `010_product_seo_and_variants.sql` | 23 | ☐ |
 
 > **`003` has a required manual follow-up.** Until a row exists in `admin_users`,
 > every catalogue write is denied — including the admin dashboard. Immediately
@@ -390,6 +394,10 @@ Numeric prices; `aggregateRating` omitted when count is 0. **Phase 2 complete.**
 `22a` — gate green. Commerce core migration (`008_commerce_core.sql`): carts,
 cart_items, addresses, orders, order_items + RLS; `in_stock` now generated from
 `stock_count`; admin product form uses stock count only.
+
+`22b` — gate green. Commerce support migration (`009_commerce_support.sql`):
+payments, inventory_moves, coupons, shipments; `decrement_stock` / `restock` with
+`for update` locking; `redeem_coupon`; admin-only RLS on all four tables.
 
 ## Deferred
 
