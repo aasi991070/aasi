@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { RemoteImage } from "@/components/shared/RemoteImage";
 import { getPublicUrl } from "@/lib/storage/images";

@@ -3,6 +3,20 @@ import { STORAGE_BUCKET } from "@/constants";
 export const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800&q=80";
 
+/** Matches `--color-store-surface` in app/globals.css. */
+const STORE_SURFACE = "#fafaf8";
+
+let cachedBlurDataUrl: string | null = null;
+
+/** Tiny static shimmer for `placeholder="blur"`. Not per-image. */
+export function getBlurDataUrl(): string {
+  if (cachedBlurDataUrl) return cachedBlurDataUrl;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><rect fill="${STORE_SURFACE}" width="8" height="8"/></svg>`;
+  cachedBlurDataUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+  return cachedBlurDataUrl;
+}
+
 function getSupabaseBaseUrl(): string {
   return process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") ?? "";
 }

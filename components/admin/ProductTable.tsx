@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Pencil, Trash2 } from "lucide-react";
-import { RemoteImage } from "@/components/shared/RemoteImage";
+import { RemoteImageWithFallback } from "@/components/shared/RemoteImageWithFallback";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -46,7 +46,7 @@ export function ProductTable({ products, onDelete }: ProductTableProps) {
                 <TableCell>
                   <div className="relative size-10 overflow-hidden rounded-md bg-slate-100">
                     {imageUrl ? (
-                      <RemoteImage
+                      <RemoteImageWithFallback
                         src={imageUrl}
                         alt={product.name}
                         fill

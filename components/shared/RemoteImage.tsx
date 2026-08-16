@@ -1,48 +1,30 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Image, { type ImageProps } from "next/image";
-import { isSupabaseStorageUrl, PLACEHOLDER_IMAGE } from "@/lib/storage/images";
+import { getBlurDataUrl } from "@/lib/storage/images";
 
-type RemoteImageProps = Omit<ImageProps, "src" | "onError"> & {
+type RemoteImageProps = Omit<ImageProps, "src" | "placeholder" | "blurDataURL"> & {
   src: string;
-  fallbackSrc?: string;
+  /** Pass false to skip the static blur placeholder on non-product imagery. */
+  withBlur?: boolean;
 };
 
+/**
+ * Server-side image wrapper. Always routes through Next's optimiser — never sets
+ * `unoptimized`. Storefront components should import this, not the client
+ * fallback variant.
+ */
 export function RemoteImage({
   src,
-  fallbackSrc = PLACEHOLDER_IMAGE,
   alt,
-  unoptimized,
+  withBlur = true,
   ...props
 }: RemoteImageProps) {
-  const preferUnoptimized = unoptimized ?? isSupabaseStorageUrl(src);
-  const [displaySrc, setDisplaySrc] = useState(src);
-  const [useUnoptimized, setUseUnoptimized] = useState(preferUnoptimized);
-
-  useEffect(() => {
-    setDisplaySrc(src);
-    setUseUnoptimized(unoptimized ?? isSupabaseStorageUrl(src));
-  }, [src, unoptimized]);
-
-  const handleError = () => {
-    if (displaySrc === fallbackSrc) return;
-
-    if (!useUnoptimized && isSupabaseStorageUrl(displaySrc)) {
-      setUseUnoptimized(true);
-      return;
-    }
-
-    setDisplaySrc(fallbackSrc);
-  };
-
   return (
     <Image
       {...props}
-      src={displaySrc}
+      src={src}
       alt={alt}
-      unoptimized={useUnoptimized}
-      onError={handleError}
+      placeholder={withBlur ? "blur" : undefined}
+      blurDataURL={withBlur ? getBlurDataUrl() : undefined}
     />
   );
 }

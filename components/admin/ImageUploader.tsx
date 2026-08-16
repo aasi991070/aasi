@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { Upload, X } from "lucide-react";
-import { RemoteImage } from "@/components/shared/RemoteImage";
+import { RemoteImageWithFallback } from "@/components/shared/RemoteImageWithFallback";
 import { Button } from "@/components/ui/button";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { cn } from "@/lib/utils/cn";
@@ -18,20 +18,23 @@ export function ImageUploader({
   onChange,
   folder = "products",
 }: ImageUploaderProps) {
-  const { upload, remove, toPublicUrl, uploading, progress } =
+  const { upload, remove, toPublicUrl, uploading, progress, error, clearError } =
     useImageUpload(folder);
   const [dragOver, setDragOver] = useState(false);
 
   const handleFiles = useCallback(
     async (files: FileList | File[]) => {
-      const fileArray = Array.from(files).filter((f) =>
-        f.type.startsWith("image/")
-      );
+      clearError();
+      const fileArray = Array.from(files);
       if (!fileArray.length) return;
-      const paths = await upload(fileArray);
-      onChange([...value, ...paths]);
+      try {
+        const paths = await upload(fileArray);
+        onChange([...value, ...paths]);
+      } catch {
+        // Error state is surfaced via `error` from the hook.
+      }
     },
-    [upload, value, onChange]
+    [clearError, upload, value, onChange]
   );
 
   const handleRemove = async (path: string) => {
@@ -71,12 +74,17 @@ export function ImageUploader({
           </Button>
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/avif"
             multiple
             className="hidden"
             onChange={(e) => e.target.files && handleFiles(e.target.files)}
           />
         </label>
+        {error ? (
+          <p role="alert" className="mt-4 text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
         {uploading && (
           <div className="mt-4 w-full max-w-xs">
             <div className="h-2 overflow-hidden rounded-full bg-slate-100">
@@ -99,7 +107,7 @@ export function ImageUploader({
               key={path}
               className="group relative aspect-square overflow-hidden rounded-lg bg-slate-100"
             >
-              <RemoteImage
+              <RemoteImageWithFallback
                 src={toPublicUrl(path)}
                 alt="Uploaded"
                 fill

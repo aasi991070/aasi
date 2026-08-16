@@ -1,28 +1,47 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import {
+  ImageUploadError,
+  prepareImageUpload,
+} from "@/lib/storage/prepareImageUpload";
 import { deleteImage, getPublicUrl, uploadImage } from "@/lib/storage/images";
 
 export function useImageUpload(folder = "products") {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const upload = useCallback(
     async (files: File[]): Promise<string[]> => {
       setUploading(true);
       setProgress(0);
-      const paths: string[] = [];
+      setError(null);
+
+      let completed = 0;
 
       try {
-        for (let i = 0; i < files.length; i++) {
-          const path = await uploadImage(files[i], folder);
-          paths.push(path);
-          setProgress(Math.round(((i + 1) / files.length) * 100));
-        }
+        const paths = await Promise.all(
+          files.map(async (file) => {
+            const prepared = await prepareImageUpload(file);
+            const path = await uploadImage(prepared, folder);
+            completed += 1;
+            setProgress(Math.round((completed / files.length) * 100));
+            return path;
+          })
+        );
         return paths;
+      } catch (err) {
+        const message =
+          err instanceof ImageUploadError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : "Upload failed.";
+        setError(message);
+        throw err;
       } finally {
         setUploading(false);
-        setProgress(0);
       }
     },
     [folder]
@@ -34,5 +53,15 @@ export function useImageUpload(folder = "products") {
 
   const toPublicUrl = useCallback((path: string) => getPublicUrl(path), []);
 
-  return { upload, remove, toPublicUrl, uploading, progress };
+  const clearError = useCallback(() => setError(null), []);
+
+  return {
+    upload,
+    remove,
+    toPublicUrl,
+    uploading,
+    progress,
+    error,
+    clearError,
+  };
 }
