@@ -13,7 +13,7 @@ export function FeaturedSlideshow({
   subtitle = "Curated selections from our collection",
 }: FeaturedSlideshowProps) {
   return (
-    <div className="relative mb-8 aspect-[16/7] w-full overflow-hidden bg-store-surface sm:aspect-[21/9]">
+    <div className="relative mb-8 aspect-[3/4] w-full overflow-hidden bg-store-surface sm:aspect-[4/5] lg:aspect-[4/3]">
       <ImageSlideshow
         images={images}
         variant="featured"

@@ -119,7 +119,10 @@ export function ImageSlideshow({
               alt={isActive ? image.alt : ""}
               fill
               priority={priorityFirst && i === 0}
-              className="object-cover"
+              className={cn(
+                "object-cover",
+                variant === "featured" ? "object-top" : "object-center"
+              )}
               sizes={sizes}
               placeholder="blur"
               blurDataURL={BLUR_DATA_URL}
