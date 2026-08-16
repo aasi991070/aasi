@@ -12,7 +12,7 @@ Branch: remediation · Started: 16 Aug 2026
 ## Deploy cadence
 
 - Deploy when asked, or at the end of a 5-prompt batch — not after every prompt.
-- **16 Aug 2026:** deploy requested; blocked — Vercel CLI not authenticated (`vercel whoami` → Not authorized). Run `vercel login` locally, then `npx vercel deploy --prod --yes`.
+- **16 Aug 2026:** hero/featured slideshows committed (`933ef11`), pushed `remediation`, production deploy via `vercel deploy --prod`.
 
 ## Supabase migrations (manual — deferred 16 Aug 2026)
 
