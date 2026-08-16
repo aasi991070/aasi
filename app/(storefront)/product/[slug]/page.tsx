@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { REVALIDATE_SECONDS } from "@/constants";
 import { ProductGrid } from "@/components/storefront/ProductGrid";
-import { ProductImageGallery } from "@/components/storefront/ProductImageGallery";
+import { ProductGallery } from "@/components/storefront/ProductGallery";
 import { ProductInfo } from "@/components/storefront/ProductInfo";
 import { ProductPurchasePanel } from "@/components/storefront/ProductPurchasePanel";
 import { ProductReviews } from "@/components/storefront/ProductReviews";
@@ -65,7 +65,7 @@ export default async function ProductPage({
   return (
     <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
       <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
-        <ProductImageGallery
+        <ProductGallery
           images={product.images}
           thumbnailUrl={product.thumbnail_url}
           productName={product.name}

@@ -37,13 +37,17 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
 
   const requiresSize = product.sizes.length > 0;
   const sizeMissing = requiresSize && !selectedSize;
-  const cartDisabled = sizeMissing || !product.in_stock;
+  const sizeUnavailable =
+    selectedSize != null && unavailableSizes.includes(selectedSize);
+  const cartDisabled = sizeMissing || sizeUnavailable || !product.in_stock;
 
   const cartLabel = sizeMissing
     ? "Select a size"
-    : !product.in_stock
-      ? "Sold out"
-      : "Add to Cart";
+    : sizeUnavailable
+      ? "Unavailable"
+      : !product.in_stock
+        ? "Sold out"
+        : "Add to Cart";
 
   const stockMessage = (() => {
     if (!product.in_stock) return "Currently unavailable.";

@@ -39,7 +39,7 @@ Branch: remediation · Started: 16 Aug 2026
 - [x] 10-product-card — **done**
 - [x] 11-image-optimisation — **done**
 - [x] 12a-pdp-layout — **done**
-- [ ] 12b-pdp-gallery-and-selectors
+- [x] 12b-pdp-gallery-and-selectors — **done**
 - [ ] 12c-remaining-storefront-surfaces
 - [ ] 13-accessibility
 - [ ] 14-dead-code
@@ -306,6 +306,11 @@ client `ProductPurchasePanel`; single `<h1>` on the PDP; sticky mobile purchase
 bar with `env(safe-area-inset-bottom)`; reviews restyled with distribution bars,
 sort and pagination. `SizeSelector` / `ColorSelector` / `ProductImageGallery`
 left for 12b (gallery still has `v18-card`).
+
+`12b` — gate green. Renamed gallery to client `ProductGallery`: all images in a
+scrollable thumb strip, keyboard nav, desktop zoom dialog, mobile scroll-snap
+carousel. `SizeSelector` and `ColorSelector` rewritten as radio groups with
+44px targets and store tokens; shared `useRadioGroup` hook for arrow-key nav.
 
 ## Deferred
 
