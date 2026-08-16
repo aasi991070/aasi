@@ -5,7 +5,7 @@ Branch: remediation · Started: 16 Aug 2026
 ## Git push cadence
 
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
-- **Last push after prompt:** 25-checkout (attempt — see below)
+- **Last push after prompt:** 25-checkout (attempt failed — GitHub 403 as `alwiarif46`)
 - **Prompts since last push:** 0
 - **Next push after prompt:** 30 (5th in next batch: 26, 27a, 27b, 27c, 28a — or when explicitly asked)
 
