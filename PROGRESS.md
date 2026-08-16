@@ -2,6 +2,18 @@
 
 Branch: remediation · Started: 16 Aug 2026
 
+## Git push cadence
+
+- **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
+- **Last push after prompt:** never (branch not on remote yet)
+- **Prompts since last push:** 11, 12a, 12b (3 of 5)
+- **Next push after prompt:** 14-dead-code (completing 12c + 13 + 14 triggers push + optional deploy)
+
+## Deploy cadence
+
+- Deploy when asked, or at the end of a 5-prompt batch — not after every prompt.
+- **16 Aug 2026:** deploy requested; blocked — Vercel CLI not authenticated (`vercel whoami` → Not authorized). Run `vercel login` locally, then `npx vercel deploy --prod --yes`.
+
 > ## ⚠️ Supabase is back, but the schema is only partially there
 >
 > The outage that halted prompt 04 is over — `laxphbevpxucjnzkaiib.supabase.co`

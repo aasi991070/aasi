@@ -1,0 +1,29 @@
+---
+description: Batch git pushes every 5 remediation prompts instead of after each one
+alwaysApply: true
+---
+
+# Remediation push cadence
+
+During the `remediation` branch run, **do not push to remote after every prompt**.
+
+## Push rule
+
+- **Commit locally after every prompt** (one prompt, one commit — unchanged).
+- **Push to remote only after every 5 completed prompts**, or when the user explicitly asks.
+- Track progress in `PROGRESS.md` under **Git push cadence**:
+  - `Last push after prompt:` (prompt id or `never`)
+  - `Prompts since last push:` (count and ids)
+  - `Next push after prompt:` (the 5th prompt in the current batch)
+
+When the counter reaches 5, push with `git push -u origin remediation` (or the current branch), then reset the counter and update `PROGRESS.md`.
+
+## Deploy rule
+
+- **Do not deploy to Vercel after every prompt.**
+- Deploy when the user asks, or at the end of a 5-prompt batch if they want preview/production updated then.
+- A local commit is not blocked by skipping push; only push/deploy are batched.
+
+## Example
+
+Prompts 11, 12a, 12b, 12c, 13 complete → commit each locally → on completing 13 (5th since last push), push and optionally deploy.
