@@ -12,6 +12,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { CheckoutOrderSummary } from "@/components/storefront/checkout/CheckoutOrderSummary";
+import { RazorpayCheckoutLauncher } from "@/components/storefront/payments/RazorpayCheckoutLauncher";
 import { createOrderAction } from "@/lib/actions/checkout";
 import { lookupPincode } from "@/lib/checkout/pincode";
 import {
@@ -72,6 +73,10 @@ export function CheckoutPageClient({
   const { showToast } = useUiStore();
   const [isPending, startTransition] = useTransition();
   const [stockIssues, setStockIssues] = useState<CheckoutStockIssue[]>([]);
+  const [paymentOrder, setPaymentOrder] = useState<{
+    orderId: string;
+    orderNumber: string;
+  } | null>(null);
   const [pincodeStatus, setPincodeStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
@@ -173,12 +178,33 @@ export function CheckoutPageClient({
       }
 
       clearCheckoutDraft();
-      // TODO(26): initiate payment
-      router.push(
-        `/checkout/pending?order=${encodeURIComponent(result.data.orderNumber)}&total=${result.data.total}`
-      );
+      setPaymentOrder({
+        orderId: result.data.orderId,
+        orderNumber: result.data.orderNumber,
+      });
     });
   });
+
+  const handlePaymentProcessing = (paymentId?: string) => {
+    if (!paymentOrder) return;
+
+    const params = new URLSearchParams({ status: "processing" });
+    if (paymentId) {
+      params.set("payment_id", paymentId);
+    }
+
+    router.push(
+      `/order/${encodeURIComponent(paymentOrder.orderNumber)}?${params.toString()}`
+    );
+  };
+
+  const handlePaymentDismissed = () => {
+    if (!paymentOrder) return;
+
+    router.push(
+      `/order/${encodeURIComponent(paymentOrder.orderNumber)}?status=failed`
+    );
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
@@ -506,6 +532,15 @@ export function CheckoutPageClient({
           </button>
         </div>
       </form>
+
+      {paymentOrder ? (
+        <RazorpayCheckoutLauncher
+          orderId={paymentOrder.orderId}
+          onProcessing={handlePaymentProcessing}
+          onDismissed={handlePaymentDismissed}
+          autoStart
+        />
+      ) : null}
     </div>
   );
 }

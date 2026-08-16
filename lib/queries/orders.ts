@@ -9,7 +9,7 @@ import { getProductImagePaths, resolveImageUrl } from "@/lib/storage/images";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 import type { CreateOrderInput } from "@/lib/validation/checkout";
-import type { CheckoutStockIssue, OrderAddressSnapshot, Product } from "@/types";
+import type { CheckoutStockIssue, Order, OrderAddressSnapshot, OrderItem, OrderPaymentStatus, OrderStatus, Product } from "@/types";
 
 interface ValidatedCheckoutLine {
   cartItemId: string;
@@ -272,3 +272,85 @@ export function isOrdersInfrastructureError(error: unknown): boolean {
   }
   return false;
 }
+
+function mapOrderRow(row: Record<string, unknown>): Order {
+  return {
+    id: String(row.id),
+    order_number: String(row.order_number),
+    user_id: row.user_id != null ? String(row.user_id) : null,
+    email: String(row.email),
+    phone: row.phone != null ? String(row.phone) : undefined,
+    status: row.status as OrderStatus,
+    payment_status: row.payment_status as OrderPaymentStatus,
+    subtotal: Number(row.subtotal),
+    discount: Number(row.discount),
+    shipping_fee: Number(row.shipping_fee),
+    tax: Number(row.tax),
+    total: Number(row.total),
+    currency: String(row.currency),
+    coupon_code: row.coupon_code != null ? String(row.coupon_code) : null,
+    shipping_address: row.shipping_address as OrderAddressSnapshot,
+    billing_address:
+      row.billing_address != null
+        ? (row.billing_address as OrderAddressSnapshot)
+        : null,
+    notes: row.notes != null ? String(row.notes) : undefined,
+    placed_at: row.placed_at != null ? String(row.placed_at) : null,
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at),
+  };
+}
+
+export async function getOrderById(orderId: string) {
+  const service = createServiceClient();
+  const row = assertOk(
+    "orders.byId",
+    await service.from("orders").select("*").eq("id", orderId).maybeSingle()
+  );
+
+  return row ? mapOrderRow(row) : null;
+}
+
+export async function getOrderByNumber(orderNumber: string) {
+  const service = createServiceClient();
+  const row = assertOk(
+    "orders.byNumber",
+    await service
+      .from("orders")
+      .select("*")
+      .eq("order_number", orderNumber)
+      .maybeSingle()
+  );
+
+  return row ? mapOrderRow(row) : null;
+}
+
+export async function getOrderItems(orderId: string) {
+  const service = createServiceClient();
+  const rows = assertOk(
+    "orders.items",
+    await service.from("order_items").select("*").eq("order_id", orderId)
+  );
+
+  return (rows ?? []).map(
+    (row): OrderItem => ({
+    id: String(row.id),
+    order_id: String(row.order_id),
+    product_id: row.product_id != null ? String(row.product_id) : null,
+    variant_id: row.variant_id != null ? String(row.variant_id) : null,
+    name_snapshot: String(row.name_snapshot),
+    slug_snapshot: String(row.slug_snapshot),
+    sku_snapshot: row.sku_snapshot != null ? String(row.sku_snapshot) : undefined,
+    image_snapshot:
+      row.image_snapshot != null ? String(row.image_snapshot) : undefined,
+    size: row.size != null ? String(row.size) : undefined,
+    color: row.color != null ? String(row.color) : undefined,
+    qty: Number(row.qty),
+    unit_price: Number(row.unit_price),
+    tax_rate: Number(row.tax_rate),
+    line_total: Number(row.line_total),
+    created_at: String(row.created_at),
+    })
+  );
+}
+

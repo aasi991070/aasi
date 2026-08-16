@@ -6,8 +6,8 @@ Branch: remediation · Started: 16 Aug 2026
 
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
 - **Last push after prompt:** 25-checkout (attempt failed — GitHub 403 as `alwiarif46`)
-- **Prompts since last push:** 0
-- **Next push after prompt:** 30 (5th in next batch: 26, 27a, 27b, 27c, 28a — or when explicitly asked)
+- **Prompts since last push:** 1 (26)
+- **Next push after prompt:** 30 (5th in batch: 27a, 27b, 27c, 28a, 28b)
 
 ## Deploy cadence
 
@@ -83,7 +83,7 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 24a-cart-actions — **done**
 - [x] 24b-cart-ui — **done**
 - [x] 25-checkout — **done**
-- [ ] 26-razorpay
+- [x] 26-razorpay — **done**
 - [ ] 27a-customer-accounts
 - [ ] 27b-admin-orders
 - [ ] 27c-email-and-verified-reviews

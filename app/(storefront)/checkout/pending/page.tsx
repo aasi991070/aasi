@@ -1,9 +1,21 @@
-import type { Metadata } from "next";
-import { CheckoutPendingPage } from "@/components/storefront/checkout/CheckoutPendingClient";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Order pending payment",
-  robots: { index: false, follow: false },
-};
+interface CheckoutPendingRedirectProps {
+  searchParams: {
+    order?: string;
+  };
+}
 
-export default CheckoutPendingPage;
+export default function CheckoutPendingRedirect({
+  searchParams,
+}: CheckoutPendingRedirectProps) {
+  const orderNumber = searchParams.order?.trim();
+
+  if (orderNumber) {
+    redirect(
+      `/order/${encodeURIComponent(orderNumber)}?status=processing`
+    );
+  }
+
+  redirect("/cart");
+}
