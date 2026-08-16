@@ -37,8 +37,8 @@ Branch: remediation · Started: 16 Aug 2026
 - [x] 09a-footer — **done**
 - [x] 09b-static-pages — **done**
 - [x] 10-product-card — **done**
-- [ ] 11-image-optimisation
-- [ ] 12a-pdp-layout
+- [x] 11-image-optimisation — **done**
+- [x] 12a-pdp-layout — **done**
 - [ ] 12b-pdp-gallery-and-selectors
 - [ ] 12c-remaining-storefront-surfaces
 - [ ] 13-accessibility
@@ -297,6 +297,16 @@ becomes load-bearing in 20 and 21.
   than by emulating a resize if you retest this.
 - `grep v18- app/(storefront)/` returns nothing.
 
+`11` — gate green (typecheck, lint, 17 tests, production build). Split
+`RemoteImage` into a server optimiser and an admin-only fallback; gallery and
+hero are server components; upload pipeline downscales to WebP before storage.
+
+`12a` — gate green. Split `ProductDetailClient` into server `ProductInfo` +
+client `ProductPurchasePanel`; single `<h1>` on the PDP; sticky mobile purchase
+bar with `env(safe-area-inset-bottom)`; reviews restyled with distribution bars,
+sort and pagination. `SizeSelector` / `ColorSelector` / `ProductImageGallery`
+left for 12b (gallery still has `v18-card`).
+
 ## Deferred
 
 | Issue | Which prompt should own it |
@@ -316,7 +326,7 @@ becomes load-bearing in 20 and 21.
 | The home page renders its catalogue but shows "No products found." in the featured section — no row in the restored database has `is_featured = true`. Data, not code, but the empty state is worth a second look once real data is back. | 10-product-card |
 | Action failure messages are generic ("Could not update the product") because `createProduct` / `updateProduct` swallow the Postgres error and return `null`. The authorisation path does return specific messages. | 04-error-handling, which owns `lib/queries/` |
 | `getRelatedProducts` still makes up to five sequential round trips; it is now cached, not fixed. | 16-query-dedupe |
-| `components/storefront/ProductReviews.tsx` is a storefront component still using `v18-*` classes (`v18-card`, `v18-text-heading`, `v18-text-muted`, `border-v18-border`). Left alone deliberately — restyling it now would collide with the shell swap. | 07-storefront-shell-swap / 12a-pdp-layout |
+| ~~`components/storefront/ProductReviews.tsx` is a storefront component still using `v18-*` classes~~ Restyled in 12a. `StarRating.tsx` still uses `v18-warning` / `v18-border` for star fill — out of 12a scope; 12c or 13 may own it. | 12a-pdp-layout |
 | No admin UI for the moderation queue — reviews can only be approved with SQL. Nothing in the plan appears to add one. | flagged for Arif; 27b-admin-orders is the closest owner |
 | `@eslint/eslintrc` is now an unused devDependency (it existed only for `FlatCompat` in the deleted `eslint.config.mjs`). | 14-dead-code |
 | Every route builds as dynamic (`ƒ`), including `/`. Expected at this stage. | 15-restore-isr |

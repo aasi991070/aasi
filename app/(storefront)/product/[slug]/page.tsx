@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import { REVALIDATE_SECONDS } from "@/constants";
-import { ProductDetailClient } from "@/components/storefront/ProductDetailClient";
+import { ProductGrid } from "@/components/storefront/ProductGrid";
+import { ProductImageGallery } from "@/components/storefront/ProductImageGallery";
+import { ProductInfo } from "@/components/storefront/ProductInfo";
+import { ProductPurchasePanel } from "@/components/storefront/ProductPurchasePanel";
+import { ProductReviews } from "@/components/storefront/ProductReviews";
 import { buildProductMetadata } from "@/lib/metadata/product";
 import {
   getAllCategories,
@@ -52,18 +56,40 @@ export default async function ProductPage({
 
   const mergedBreadcrumb = (() => {
     if (!genderCategory) return breadcrumb;
-    if (breadcrumb.some((c) => c.id === genderCategory.id)) return breadcrumb;
+    if (breadcrumb.some((category) => category.id === genderCategory.id)) {
+      return breadcrumb;
+    }
     return [genderCategory, ...breadcrumb];
   })();
 
   return (
-    <ProductDetailClient
-      product={product}
-      breadcrumb={mergedBreadcrumb}
-      related={related}
-      genderCategory={genderCategory}
-      initialReviews={reviews}
-      reviewSummary={reviewSummary}
-    />
+    <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
+      <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+        <ProductImageGallery
+          images={product.images}
+          thumbnailUrl={product.thumbnail_url}
+          productName={product.name}
+        />
+
+        <ProductInfo
+          product={product}
+          breadcrumb={mergedBreadcrumb}
+          genderCategory={genderCategory}
+          purchasePanel={<ProductPurchasePanel product={product} />}
+        />
+      </div>
+
+      <ProductReviews
+        productId={product.id}
+        initialReviews={reviews}
+        initialSummary={reviewSummary}
+      />
+
+      {related.length > 0 ? (
+        <div className="mt-20 border-t border-store-border pt-12">
+          <ProductGrid products={related} title="You May Also Like" />
+        </div>
+      ) : null}
+    </div>
   );
 }
