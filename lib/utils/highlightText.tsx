@@ -29,7 +29,7 @@ export function HighlightText({
         tokens.some((t) => part.toLowerCase() === t.toLowerCase()) ? (
           <mark
             key={i}
-            className="rounded bg-yellow-100 px-0.5 text-inherit"
+            className="rounded-sm bg-store-accent/25 px-0.5 text-inherit"
           >
             {part}
           </mark>

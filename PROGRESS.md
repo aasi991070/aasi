@@ -6,13 +6,23 @@ Branch: remediation · Started: 16 Aug 2026
 
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
 - **Last push after prompt:** never (branch not on remote yet)
-- **Prompts since last push:** 11, 12a, 12b (3 of 5)
-- **Next push after prompt:** 14-dead-code (completing 12c + 13 + 14 triggers push + optional deploy)
+- **Prompts since last push:** 11, 12a, 12b, 12c (4 of 5)
+- **Next push after prompt:** 13-accessibility (5th prompt triggers push)
 
 ## Deploy cadence
 
 - Deploy when asked, or at the end of a 5-prompt batch — not after every prompt.
 - **16 Aug 2026:** deploy requested; blocked — Vercel CLI not authenticated (`vercel whoami` → Not authorized). Run `vercel login` locally, then `npx vercel deploy --prod --yes`.
+
+## Supabase migrations (manual — deferred 16 Aug 2026)
+
+Tables still missing on `laxphbevpxucjnzkaiib`: `site_settings`, `product_reviews`, `admin_users`. **PDPs error until applied.**
+
+**Option A — SQL Editor (fastest):** paste and run `supabase/migrations/_manual_000_to_004.sql` in [Supabase SQL Editor](https://supabase.com/dashboard/project/laxphbevpxucjnzkaiib/sql/new).
+
+**Option B — CLI script:** add `SUPABASE_DB_PASSWORD` to `.env.local`, then `npm run db:migrate`.
+
+After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick migrations in the table below.
 
 > ## ⚠️ Supabase is back, but the schema is only partially there
 >
@@ -52,7 +62,7 @@ Branch: remediation · Started: 16 Aug 2026
 - [x] 11-image-optimisation — **done**
 - [x] 12a-pdp-layout — **done**
 - [x] 12b-pdp-gallery-and-selectors — **done**
-- [ ] 12c-remaining-storefront-surfaces
+- [x] 12c-remaining-storefront-surfaces — **done**
 - [ ] 13-accessibility
 - [ ] 14-dead-code
 

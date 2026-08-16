@@ -1,9 +1,12 @@
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
+type LoadingSpinnerSurface = "store" | "admin";
+
 interface LoadingSpinnerProps {
   className?: string;
   size?: "sm" | "md" | "lg";
+  surface?: LoadingSpinnerSurface;
 }
 
 const sizeMap = {
@@ -15,10 +18,16 @@ const sizeMap = {
 export function LoadingSpinner({
   className,
   size = "md",
+  surface = "store",
 }: LoadingSpinnerProps) {
   return (
     <Loader2
-      className={cn("animate-spin text-v18-primary", sizeMap[size], className)}
+      className={cn(
+        "animate-spin",
+        surface === "admin" ? "text-v18-primary" : "text-store-accent-dark",
+        sizeMap[size],
+        className
+      )}
       aria-label="Loading"
     />
   );

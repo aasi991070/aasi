@@ -31,67 +31,67 @@ export function SearchResultCard({
   const categoryLabel = categoryPath.map((c) => c.name).join(" › ");
 
   return (
-    <article className="v18-card flex gap-4 overflow-hidden p-4">
+    <article className="store-hairline flex gap-4 bg-store-white p-4 md:p-6">
       <Link
         href={`/product/${product.slug}`}
-        className="relative size-24 shrink-0 overflow-hidden rounded-lg bg-slate-100"
+        className="relative size-24 shrink-0 overflow-hidden bg-store-surface md:size-28"
       >
-        {imageUrl && (
+        {imageUrl ? (
           <RemoteImage
             src={imageUrl}
             alt={product.name}
             fill
             className="object-cover"
-            sizes="96px"
+            sizes="112px"
           />
-        )}
+        ) : null}
       </Link>
 
       <div className="min-w-0 flex-1">
         <Link
           href={`/product/${product.slug}`}
-          className="text-base font-semibold v18-text-heading hover:text-v18-primary"
+          className="font-sans text-base font-medium text-store-ink transition-colors hover:text-store-accent-dark"
         >
           <HighlightText text={product.name} tokens={tokens} />
         </Link>
 
-        <p className="mt-1 text-sm font-medium text-v18-primary">
+        <p className="mt-1 font-sans text-sm font-medium text-store-accent-dark">
           {formatPrice(product.sale_price ?? product.price)}
         </p>
 
-        {matchedFields.includes("description") && product.description && (
-          <p className="mt-2 text-sm v18-text-muted">
+        {matchedFields.includes("description") && product.description ? (
+          <p className="mt-2 font-sans text-sm text-store-ink-muted">
             <HighlightText
               text={excerptAroundMatch(product.description, tokens)}
               tokens={tokens}
             />
           </p>
-        )}
+        ) : null}
 
-        {matchedFields.includes("tags") && product.tags.length > 0 && (
-          <p className="mt-2 text-xs v18-text-muted">
+        {matchedFields.includes("tags") && product.tags.length > 0 ? (
+          <p className="mt-2 font-sans text-xs text-store-ink-muted">
             Tags:{" "}
             <HighlightText text={product.tags.join(", ")} tokens={tokens} />
           </p>
-        )}
+        ) : null}
 
-        {matchedFields.includes("category") && categoryLabel && (
-          <p className="mt-2 text-xs v18-text-muted">
+        {matchedFields.includes("category") && categoryLabel ? (
+          <p className="mt-2 font-sans text-xs text-store-ink-muted">
             Category:{" "}
             <Link
               href={getCategoryHref(categoryPath)}
-              className="text-v18-primary hover:underline"
+              className="text-store-ink underline-offset-4 hover:underline"
             >
               <HighlightText text={categoryLabel} tokens={tokens} />
             </Link>
           </p>
-        )}
+        ) : null}
 
-        {matchedFields.includes("gender") && product.gender && (
-          <p className="mt-1 text-xs v18-text-muted">
+        {matchedFields.includes("gender") && product.gender ? (
+          <p className="mt-1 font-sans text-xs text-store-ink-muted">
             Gender: <HighlightText text={product.gender} tokens={tokens} />
           </p>
-        )}
+        ) : null}
       </div>
     </article>
   );

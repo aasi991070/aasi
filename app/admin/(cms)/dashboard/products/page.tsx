@@ -92,6 +92,7 @@ export default function AdminProductsPage() {
         </>
       ) : (
         <EmptyState
+          surface="admin"
           title="No products found"
           description="Get started by adding your first product."
           actionLabel="Add Product"

@@ -29,7 +29,7 @@ export default function AdminCategoriesPage() {
 
       {isLoading ? (
         <div className="flex justify-center py-20">
-          <LoadingSpinner size="lg" />
+          <LoadingSpinner surface="admin" size="lg" />
         </div>
       ) : (
         <CategoryTreeView categories={categories ?? []} />

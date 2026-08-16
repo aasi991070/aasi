@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { RemoteImage } from "@/components/shared/RemoteImage";
-import { getPublicUrl } from "@/lib/storage/images";
 
 interface HeroProps {
   title?: string;
   subtitle?: string;
   ctaLabel?: string;
   ctaHref?: string;
-  imageUrl?: string;
+  imageSrc: string;
 }
 
 export function Hero({
@@ -15,44 +14,39 @@ export function Hero({
   subtitle = "Discover our curated collection of luxury essentials",
   ctaLabel = "Explore Collection",
   ctaHref = "/category/mens",
-  imageUrl = "https://images.unsplash.com/photo-1441984904996-e0b46a68737d?w=1920&q=80",
+  imageSrc,
 }: HeroProps) {
-  const resolvedImageUrl =
-    imageUrl.startsWith("http")
-      ? imageUrl
-      : imageUrl.startsWith("products/") || imageUrl.startsWith("hero/")
-        ? getPublicUrl(imageUrl)
-        : imageUrl;
-
   return (
-    <section className="mb-8">
-      <div className="mb-6">
-        <h1 className="text-[28px] font-semibold v18-text-on-gradient md:text-4xl">
+    <section className="relative left-1/2 mb-12 min-h-[90vh] w-screen max-w-[100vw] -translate-x-1/2 overflow-hidden">
+      <RemoteImage
+        src={imageSrc}
+        alt=""
+        fill
+        priority
+        className="object-cover"
+        sizes="100vw"
+      />
+
+      <div
+        className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/25 to-black/10"
+        aria-hidden="true"
+      />
+
+      <div className="absolute inset-0 flex flex-col justify-end px-6 pb-16 pt-24 lg:px-8 lg:pb-20">
+        <h1 className="max-w-3xl font-display text-[clamp(2.5rem,6vw,4.5rem)] font-light leading-[1.05] tracking-[-0.02em] text-white">
           {title}
         </h1>
-        <p className="mt-2 text-sm v18-text-muted-on-gradient">{subtitle}</p>
-      </div>
-
-      <div className="v18-card overflow-hidden p-0">
-        <div className="relative aspect-[21/9] min-h-[280px]">
-          <RemoteImage
-            src={resolvedImageUrl}
-            alt="Hero"
-            fill
-            priority
-            className="object-cover"
-            sizes="100vw"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-v18-bg-from/60 to-transparent" />
-          <div className="absolute bottom-0 left-0 p-8">
-            <Link
-              href={ctaHref}
-              className="inline-flex min-h-11 items-center rounded-[var(--radius-v18-btn)] border border-white px-8 text-xs font-medium uppercase tracking-[0.15em] text-white transition-colors hover:bg-v18-primary"
-            >
-              {ctaLabel}
-            </Link>
-          </div>
-        </div>
+        {subtitle ? (
+          <p className="mt-4 max-w-xl font-sans text-base text-white/85 md:text-lg">
+            {subtitle}
+          </p>
+        ) : null}
+        <Link
+          href={ctaHref}
+          className="mt-8 inline-flex min-h-11 w-fit items-center border border-white px-8 font-sans text-xs uppercase tracking-[0.15em] text-white transition-colors hover:border-store-accent hover:bg-store-accent hover:text-store-white"
+        >
+          {ctaLabel}
+        </Link>
       </div>
     </section>
   );

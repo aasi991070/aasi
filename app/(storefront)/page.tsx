@@ -9,8 +9,21 @@ import {
   getNewArrivals,
 } from "@/lib/queries/products";
 import { getSiteSettings } from "@/lib/queries/settings";
+import { getPublicUrl } from "@/lib/storage/images";
 
 export const revalidate = REVALIDATE_SECONDS;
+
+const DEFAULT_HERO_IMAGE =
+  "https://images.unsplash.com/photo-1441984904996-e0b46a68737d?w=1920&q=80";
+
+function resolveHeroImageSrc(imageUrl: string | null | undefined): string {
+  if (!imageUrl) return DEFAULT_HERO_IMAGE;
+  if (imageUrl.startsWith("http")) return imageUrl;
+  if (imageUrl.startsWith("products/") || imageUrl.startsWith("hero/")) {
+    return getPublicUrl(imageUrl);
+  }
+  return imageUrl;
+}
 
 export default async function HomePage() {
   const [featured, newArrivals, level1Categories, settings] = await Promise.all([
@@ -37,7 +50,7 @@ export default async function HomePage() {
         subtitle: settings.hero_subtitle,
         ctaLabel: settings.hero_cta_label,
         ctaHref: settings.hero_cta_href,
-        imageUrl: settings.hero_image_url,
+        imageSrc: resolveHeroImageSrc(settings.hero_image_url),
       }}
     />
   );

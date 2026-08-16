@@ -30,7 +30,7 @@ export function StarRating({
               key={i}
               type="button"
               onClick={() => onChange(starValue)}
-              className="text-v18-warning transition-colors hover:scale-110"
+              className="text-store-accent transition-colors hover:scale-110"
               aria-label={`Rate ${starValue} stars`}
             >
               <Star
@@ -45,14 +45,16 @@ export function StarRating({
             key={i}
             className={cn(
               iconSize,
-              filled ? "fill-v18-warning text-v18-warning" : "text-v18-border"
+              filled ? "fill-store-accent text-store-accent" : "text-store-border"
             )}
           />
         );
       })}
-      {showValue && value > 0 && (
-        <span className="ml-1 text-sm v18-text-muted">{value.toFixed(1)}</span>
-      )}
+      {showValue && value > 0 ? (
+        <span className="ml-1 font-sans text-sm text-store-ink-muted">
+          {value.toFixed(1)}
+        </span>
+      ) : null}
     </div>
   );
 }

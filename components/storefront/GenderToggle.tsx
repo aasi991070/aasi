@@ -13,7 +13,7 @@ export function GenderToggle() {
   ];
 
   return (
-    <div className="inline-flex overflow-hidden rounded-[var(--radius-v18-btn)] border border-v18-border bg-white">
+    <div className="inline-flex overflow-hidden border border-store-border bg-store-white">
       {options.map((opt) => {
         const active = pathname.startsWith(opt.href);
         return (
@@ -21,10 +21,10 @@ export function GenderToggle() {
             key={opt.href}
             href={opt.href}
             className={cn(
-              "px-5 py-2.5 text-xs font-medium uppercase tracking-wider transition-colors",
+              "min-h-11 px-5 py-2.5 font-sans text-xs uppercase tracking-[0.15em] transition-colors",
               active
-                ? "v18-btn-primary text-white"
-                : "v18-text-muted hover:bg-slate-50"
+                ? "bg-store-accent text-store-white"
+                : "text-store-ink-muted hover:bg-store-surface hover:text-store-ink"
             )}
           >
             {opt.label}

@@ -1,9 +1,12 @@
 import { cn } from "@/lib/utils/cn";
 
-interface PageHeaderProps {
+type PageHeaderSurface = "store" | "admin";
+
+export interface PageHeaderProps {
   title: string;
   subtitle?: string;
   variant?: "onGradient" | "default";
+  surface?: PageHeaderSurface;
   action?: React.ReactNode;
   className?: string;
 }
@@ -11,15 +14,13 @@ interface PageHeaderProps {
 export function PageHeader({
   title,
   subtitle,
-  // Defaults to dark-on-light. `onGradient` is white text, which only works on
-  // the admin blue shell — every admin call site opts into it explicitly. The
-  // storefront no longer has a gradient, so inheriting it rendered invisible
-  // headings.
   variant = "default",
+  surface = "store",
   action,
   className,
 }: PageHeaderProps) {
-  const isGradient = variant === "onGradient";
+  const isAdmin = surface === "admin";
+  const isGradient = isAdmin && variant === "onGradient";
 
   return (
     <div
@@ -31,24 +32,33 @@ export function PageHeader({
       <div>
         <h1
           className={cn(
-            "text-[28px] font-semibold leading-tight",
-            isGradient ? "v18-text-on-gradient" : "v18-text-heading"
+            "leading-tight",
+            isAdmin
+              ? cn(
+                  "text-[28px] font-semibold",
+                  isGradient ? "v18-text-on-gradient" : "v18-text-heading"
+                )
+              : "font-display text-3xl font-normal text-store-ink md:text-4xl"
           )}
         >
           {title}
         </h1>
-        {subtitle && (
+        {subtitle ? (
           <p
             className={cn(
               "mt-1 text-sm",
-              isGradient ? "v18-text-muted-on-gradient" : "v18-text-muted"
+              isAdmin
+                ? isGradient
+                  ? "v18-text-muted-on-gradient"
+                  : "v18-text-muted"
+                : "font-sans text-store-ink-muted"
             )}
           >
             {subtitle}
           </p>
-        )}
+        ) : null}
       </div>
-      {action && <div className="shrink-0">{action}</div>}
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }
