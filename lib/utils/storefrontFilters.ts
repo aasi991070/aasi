@@ -85,3 +85,17 @@ export function buildCategoryQueryString(
   const query = next.toString();
   return query ? `?${query}` : "";
 }
+
+export function buildClearFiltersQueryString(
+  current: URLSearchParams
+): string {
+  const next = new URLSearchParams(current.toString());
+  next.delete("sizes");
+  next.delete("colors");
+  next.delete("minPrice");
+  next.delete("maxPrice");
+  next.delete("inStock");
+  next.delete("page");
+  const query = next.toString();
+  return query ? `?${query}` : "";
+}

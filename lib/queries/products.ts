@@ -9,6 +9,7 @@ import {
   tokenizeQuery,
 } from "@/lib/utils/searchText";
 import type {
+  CategoryFacets,
   CategoryProductsOptions,
   CategoryProductsResult,
   CategorySort,
@@ -229,29 +230,102 @@ export const getNewArrivals = cachedProductQuery(
 );
 
 /**
- * Distinct colour values for the category filter sidebar. Selects only the
- * `colors` column — lighter than loading full product rows.
+ * Distinct sizes, colours, and price bounds for the category filter sidebar.
+ * Separate from the paginated product query so facets stay stable across pages.
  */
-export async function getCategoryAvailableColors(
-  categoryIds: string[]
-): Promise<string[]> {
-  if (!categoryIds.length) return [];
+function isMissingCategoryFacetsRpc(error: { code?: string; message?: string }) {
+  return (
+    error.code === "PGRST202" ||
+    error.message?.includes("category_facets")
+  );
+}
 
+async function getCategoryFacetsFallback(
+  categoryIds: string[]
+): Promise<CategoryFacets> {
   const supabase = createPublicClient();
   const data = assertOk(
-    "products.categoryColors",
+    "products.categoryFacetsFallback",
     await supabase
       .from("products")
-      .select("colors")
+      .select("sizes, colors, price, sale_price")
       .in("category_id", categoryIds)
       .eq("is_active", true)
   );
 
-  return Array.from(
-    new Set(
-      ((data ?? []) as { colors: string[] }[]).flatMap((row) => row.colors ?? [])
-    )
-  ).sort();
+  const sizes = new Set<string>();
+  const colors = new Set<string>();
+  let minPrice: number | null = null;
+  let maxPrice: number | null = null;
+
+  for (const row of (data ?? []) as Record<string, unknown>[]) {
+    for (const size of (row.sizes as string[] | null) ?? []) {
+      sizes.add(size);
+    }
+    for (const color of (row.colors as string[] | null) ?? []) {
+      colors.add(color);
+    }
+
+    const effective =
+      row.sale_price != null
+        ? Number(row.sale_price)
+        : Number(row.price);
+
+    if (Number.isFinite(effective)) {
+      minPrice = minPrice == null ? effective : Math.min(minPrice, effective);
+      maxPrice = maxPrice == null ? effective : Math.max(maxPrice, effective);
+    }
+  }
+
+  return {
+    sizes: Array.from(sizes).sort(),
+    colors: Array.from(colors).sort(),
+    minPrice,
+    maxPrice,
+  };
+}
+
+export async function getCategoryFacets(
+  categoryIds: string[]
+): Promise<CategoryFacets> {
+  if (!categoryIds.length) {
+    return { sizes: [], colors: [], minPrice: null, maxPrice: null };
+  }
+
+  return cachedProductQuery(
+    "products:category-facets",
+    async (ids: string[]): Promise<CategoryFacets> => {
+      const supabase = createPublicClient();
+      const { data, error } = await supabase.rpc("category_facets", {
+        category_ids: ids,
+      });
+
+      if (error) {
+        if (isMissingCategoryFacetsRpc(error)) {
+          console.warn(
+            "[products] category_facets RPC missing — falling back to product aggregation until migrations run",
+            error.message
+          );
+          return getCategoryFacetsFallback(ids);
+        }
+        assertOk("products.categoryFacets", { data, error });
+      }
+
+      const row = ((data ?? []) as Record<string, unknown>[])[0];
+      if (!row) {
+        return { sizes: [], colors: [], minPrice: null, maxPrice: null };
+      }
+
+      return {
+        sizes: Array.isArray(row.sizes) ? (row.sizes as string[]) : [],
+        colors: Array.isArray(row.colors) ? (row.colors as string[]) : [],
+        minPrice:
+          row.min_price != null ? Number(row.min_price) : null,
+        maxPrice:
+          row.max_price != null ? Number(row.max_price) : null,
+      };
+    }
+  )(categoryIds);
 }
 
 function applyStorefrontFilters<

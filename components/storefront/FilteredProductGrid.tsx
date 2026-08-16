@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getFilteredProducts } from "@/lib/actions/storefront";
 import {
@@ -11,8 +11,11 @@ import {
   parseStorefrontFilters,
   shouldRefetchCategoryProducts,
 } from "@/lib/utils/storefrontFilters";
+import { useLiveRegionStore } from "@/hooks/useLiveRegionStore";
 import type { CategoryProductsResult } from "@/types";
+import { ActiveFilterChips } from "./ActiveFilterChips";
 import { ProductGrid } from "./ProductGrid";
+import { SortSelect } from "./SortSelect";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface FilteredProductGridProps {
@@ -115,6 +118,8 @@ export function FilteredProductGrid({
   const needsFetch = shouldRefetchCategoryProducts(searchParams);
   const [result, setResult] = useState(initialResult);
   const [loading, setLoading] = useState(false);
+  const announce = useLiveRegionStore((state) => state.announce);
+  const lastAnnouncedTotal = useRef<number | null>(null);
 
   useEffect(() => {
     if (!needsFetch) {
@@ -140,6 +145,15 @@ export function FilteredProductGrid({
   }, [categoryIds, filters, initialResult, needsFetch, page, sort]);
 
   const { products, total, pageSize } = result;
+
+  useEffect(() => {
+    if (loading || lastAnnouncedTotal.current === total) return;
+    lastAnnouncedTotal.current = total;
+    announce(
+      total === 1 ? "1 product matches" : `${total} products match`
+    );
+  }, [announce, loading, total]);
+
   const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const end = Math.min(page * pageSize, total);
 
@@ -155,6 +169,9 @@ export function FilteredProductGrid({
 
   return (
     <div>
+      <SortSelect />
+      <ActiveFilterChips />
+
       {total > 0 ? (
         <p className="mb-6 font-sans text-sm text-store-ink-muted">
           Showing {start}–{end} of {total}

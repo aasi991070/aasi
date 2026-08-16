@@ -6,8 +6,8 @@ Branch: remediation · Started: 16 Aug 2026
 
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
 - **Last push after prompt:** 18a-category-query-and-pagination (attempt failed — GitHub 403 as `alwiarif46`)
-- **Prompts since last push:** 0
-- **Next push after prompt:** 18b (start of next 5-prompt batch; or push now with correct GitHub account)
+- **Prompts since last push:** 1 (18b)
+- **Next push after prompt:** 19 (2nd in batch; push after 19 completes if batch is 18b–19–20–21–22a, or adjust when 5th lands)
 
 ## Deploy cadence
 
@@ -71,7 +71,7 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 
 ## Phase 2 — Performance & SEO
 - [x] 18a-category-query-and-pagination — **done**
-- [ ] 18b-filter-ui-and-facets
+- [x] 18b-filter-ui-and-facets — **done**
 - [ ] 19-single-query-layer
 - [ ] 20-sitemap-robots
 - [ ] 21-structured-data

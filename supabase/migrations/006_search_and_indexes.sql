@@ -112,3 +112,25 @@ create index if not exists products_effective_price_idx on products (effective_p
 update products set colors = (
   select coalesce(array_agg(lower(c)), '{}') from unnest(colors) c
 ) where colors is not null;
+
+-- ---------------------------------------------------------------------------
+-- Prompt 18b — category facet aggregates for filter UI
+-- ---------------------------------------------------------------------------
+
+create or replace function category_facets(category_ids uuid[])
+returns table (sizes text[], colors text[], min_price numeric, max_price numeric)
+language sql stable security definer set search_path = public as $$
+  select
+    (select coalesce(array_agg(distinct s order by s), '{}')
+       from products p, unnest(p.sizes) s
+      where p.category_id = any(category_ids) and p.is_active),
+    (select coalesce(array_agg(distinct c order by c), '{}')
+       from products p, unnest(p.colors) c
+      where p.category_id = any(category_ids) and p.is_active),
+    (select min(effective_price) from products
+      where category_id = any(category_ids) and is_active),
+    (select max(effective_price) from products
+      where category_id = any(category_ids) and is_active);
+$$;
+
+grant execute on function category_facets(uuid[]) to anon, authenticated;

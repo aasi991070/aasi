@@ -12,7 +12,7 @@ import {
   getAllCategorySlugPaths,
 } from "@/lib/queries/categories";
 import {
-  getCategoryAvailableColors,
+  getCategoryFacets,
   getProductsByCategory,
 } from "@/lib/queries/products";
 import { splitDescriptionParagraphs } from "@/lib/utils/formatDescription";
@@ -83,12 +83,12 @@ export default async function CategoryPage({
   const breadcrumb = getCategoryBreadcrumbPath(category.id, allCategories);
   const categoryBasePath = `/category/${slug.join("/")}`;
 
-  const [initialResult, availableColors] = await Promise.all([
+  const [initialResult, facets] = await Promise.all([
     getProductsByCategory(categoryIds, {}, {
       page: 1,
       pageSize: PRODUCTS_PAGE_SIZE,
     }),
-    getCategoryAvailableColors(categoryIds),
+    getCategoryFacets(categoryIds),
   ]);
 
   const descriptionParagraphs = splitDescriptionParagraphs(
@@ -114,7 +114,7 @@ export default async function CategoryPage({
         <Suspense
           fallback={<Skeleton className="hidden h-96 w-56 lg:block" />}
         >
-          <CategoryFilter availableColors={availableColors} />
+          <CategoryFilter facets={facets} />
         </Suspense>
         <div className="flex-1 pb-24">
           <Suspense
