@@ -57,7 +57,7 @@ function mapVariant(row: Record<string, unknown>): ProductVariant {
   };
 }
 
-function mapProductRow(
+export function mapProductRow(
   row: Record<string, unknown>,
   options?: { storefront?: boolean }
 ): Product {

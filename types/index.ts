@@ -227,6 +227,47 @@ export interface CartItem {
   variant?: ProductVariant;
 }
 
+export interface CartLineFlags {
+  priceChanged: boolean;
+  stockReduced: boolean;
+  qtyClamped: boolean;
+}
+
+export interface CartItemView extends CartItem {
+  currentUnitPrice: number;
+  availableStock: number;
+  lineTotal: number;
+  flags: CartLineFlags;
+}
+
+export interface CartSummary extends Cart {
+  items: CartItemView[];
+  subtotal: number;
+  discount: number;
+  itemCount: number;
+  couponCode?: string | null;
+  messages: string[];
+}
+
+export type CartErrorCode =
+  | "NOT_FOUND"
+  | "PRODUCT_INACTIVE"
+  | "VARIANT_MISMATCH"
+  | "OUT_OF_STOCK"
+  | "CART_FULL"
+  | "INVALID_COUPON"
+  | "INVALID_INPUT"
+  | "UNKNOWN";
+
+export interface CartError {
+  code: CartErrorCode;
+  message: string;
+}
+
+export type CartActionResult =
+  | { ok: true; cart: CartSummary }
+  | { ok: false; error: CartError };
+
 export interface Address {
   id: string;
   user_id?: string | null;
