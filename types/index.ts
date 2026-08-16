@@ -69,6 +69,21 @@ export interface StorefrontFilters {
   search?: string;
 }
 
+export type CategorySort = "newest" | "price_asc" | "price_desc" | "name_asc";
+
+export interface CategoryProductsOptions {
+  page?: number;
+  pageSize?: number;
+  sort?: CategorySort;
+}
+
+export interface CategoryProductsResult {
+  products: Product[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export type ReviewStatus = "pending" | "approved" | "rejected";
 
 /**

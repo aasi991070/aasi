@@ -99,3 +99,16 @@ create index if not exists categories_name_trgm on categories using gin (name gi
 
 grant execute on function search_products(text, int) to anon, authenticated;
 grant execute on function search_categories(text, int) to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Prompt 18a — effective price for sort/filter; normalise colour casing
+-- ---------------------------------------------------------------------------
+
+alter table products add column if not exists effective_price numeric(10,2)
+  generated always as (coalesce(sale_price, price)) stored;
+
+create index if not exists products_effective_price_idx on products (effective_price);
+
+update products set colors = (
+  select coalesce(array_agg(lower(c)), '{}') from unnest(colors) c
+) where colors is not null;

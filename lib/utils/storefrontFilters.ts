@@ -1,4 +1,11 @@
-import type { StorefrontFilters } from "@/types";
+import type { CategorySort, StorefrontFilters } from "@/types";
+
+const CATEGORY_SORTS: CategorySort[] = [
+  "newest",
+  "price_asc",
+  "price_desc",
+  "name_asc",
+];
 
 export function parseStorefrontFilters(
   params: URLSearchParams
@@ -17,6 +24,19 @@ export function parseStorefrontFilters(
   };
 }
 
+export function parseCategoryPage(params: URLSearchParams): number {
+  const page = Number(params.get("page"));
+  return Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+}
+
+export function parseCategorySort(params: URLSearchParams): CategorySort {
+  const sort = params.get("sort");
+  if (sort && CATEGORY_SORTS.includes(sort as CategorySort)) {
+    return sort as CategorySort;
+  }
+  return "newest";
+}
+
 export function hasActiveStorefrontFilters(
   filters: StorefrontFilters
 ): boolean {
@@ -28,4 +48,40 @@ export function hasActiveStorefrontFilters(
       filters.maxPrice != null ||
       filters.search
   );
+}
+
+export function shouldRefetchCategoryProducts(
+  params: URLSearchParams
+): boolean {
+  return (
+    hasActiveStorefrontFilters(parseStorefrontFilters(params)) ||
+    parseCategoryPage(params) > 1 ||
+    parseCategorySort(params) !== "newest"
+  );
+}
+
+export function buildCategoryQueryString(
+  current: URLSearchParams,
+  updates: Record<string, string | null | undefined>
+): string {
+  const next = new URLSearchParams(current.toString());
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (value == null || value === "") {
+      next.delete(key);
+      continue;
+    }
+    if (key === "page" && value === "1") {
+      next.delete(key);
+      continue;
+    }
+    if (key === "sort" && value === "newest") {
+      next.delete(key);
+      continue;
+    }
+    next.set(key, value);
+  }
+
+  const query = next.toString();
+  return query ? `?${query}` : "";
 }

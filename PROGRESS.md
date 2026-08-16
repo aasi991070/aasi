@@ -5,9 +5,9 @@ Branch: remediation · Started: 16 Aug 2026
 ## Git push cadence
 
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
-- **Last push after prompt:** 13-accessibility (attempt failed — GitHub 403 as `alwiarif46`)
-- **Prompts since last push:** 4 (14-dead-code, 15-restore-isr, 16-query-dedupe, 17-indexes-and-fts)
-- **Next push after prompt:** 18a-category-query-and-pagination (after 15, 16, 17, 18a)
+- **Last push after prompt:** 18a-category-query-and-pagination (attempt pending)
+- **Prompts since last push:** 0
+- **Next push after prompt:** 18b-filter-ui-and-facets (after 19, 20, 21, 18b — 5th in next batch)
 
 ## Deploy cadence
 
@@ -70,7 +70,7 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 17-indexes-and-fts — **done**
 
 ## Phase 2 — Performance & SEO
-- [ ] 18a-category-query-and-pagination
+- [x] 18a-category-query-and-pagination — **done**
 - [ ] 18b-filter-ui-and-facets
 - [ ] 19-single-query-layer
 - [ ] 20-sitemap-robots
@@ -371,6 +371,12 @@ memory then one product query with featured/created ordering. Removed
 Storefront and admin search use RPC; Node post-filtering removed. `buildIlikeOrFilter`
 kept in `hooks/useProducts.ts` with TODO(19). **Requires manual migration 006**
 before search works against live DB.
+
+`18a` — gate green. Appended `effective_price` + colour normalisation to `006`.
+`getProductsByCategory` pushes filters/sort/pagination into SQL (`overlaps`,
+`effective_price`, `.range`); search intersects `search_products` RPC with category
+IDs. Category page paginates with crawlable `<Link href="?page=N">` and
+"Showing 1–20 of N". **Re-run 006 append** if migration was applied before 18a.
 
 ## Deferred
 

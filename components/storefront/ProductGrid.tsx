@@ -5,14 +5,17 @@ interface ProductGridProps {
   products: Product[];
   title?: string;
   /** First N cards pass `priority` to their hero image. Defaults to one row. */
+  priority?: number;
   priorityCount?: number;
 }
 
 export function ProductGrid({
   products,
   title,
-  priorityCount = 4,
+  priority,
+  priorityCount,
 }: ProductGridProps) {
+  const imagePriorityCount = priority ?? priorityCount ?? 4;
   if (!products.length) {
     return (
       <div className="store-hairline px-6 py-16 text-center">
@@ -35,7 +38,7 @@ export function ProductGrid({
           <ProductCard
             key={product.id}
             product={product}
-            priority={index < priorityCount}
+            priority={index < imagePriorityCount}
           />
         ))}
       </div>

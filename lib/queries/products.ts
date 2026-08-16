@@ -5,12 +5,13 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { getAllCategories } from "@/lib/queries/categories";
 import { PRODUCTS_PAGE_SIZE, REVALIDATE_SECONDS } from "@/constants";
 import {
-  buildProductSearchText,
-  matchesAllTokens,
   MAX_QUERY_LENGTH,
   tokenizeQuery,
 } from "@/lib/utils/searchText";
 import type {
+  CategoryProductsOptions,
+  CategoryProductsResult,
+  CategorySort,
   DashboardStats,
   Product,
   ProductFilters,
@@ -228,75 +229,151 @@ export const getNewArrivals = cachedProductQuery(
 );
 
 /**
- * Only the database round trip is cached. The in-memory filtering below stays
- * outside, because the search branch calls `getAllCategories`, which is itself
- * cached — nesting one `unstable_cache` inside another buys nothing and makes
- * the keys harder to reason about.
+ * Distinct colour values for the category filter sidebar. Selects only the
+ * `colors` column — lighter than loading full product rows.
  */
-const fetchCategoryProducts = cachedProductQuery(
-  "products:by-category",
-  async (
-    categoryIds: string[],
-    inStock: boolean,
-    minPrice: number | null,
-    maxPrice: number | null
-  ): Promise<Product[]> => {
-    const supabase = createPublicClient();
-    let query = supabase
+export async function getCategoryAvailableColors(
+  categoryIds: string[]
+): Promise<string[]> {
+  if (!categoryIds.length) return [];
+
+  const supabase = createPublicClient();
+  const data = assertOk(
+    "products.categoryColors",
+    await supabase
       .from("products")
-      .select("*")
+      .select("colors")
       .in("category_id", categoryIds)
       .eq("is_active", true)
-      .order("created_at", { ascending: false });
+  );
 
-    if (inStock) {
-      query = query.eq("in_stock", true);
-    }
-    if (minPrice != null) {
-      query = query.gte("price", minPrice);
-    }
-    if (maxPrice != null) {
-      query = query.lte("price", maxPrice);
-    }
+  return Array.from(
+    new Set(
+      ((data ?? []) as { colors: string[] }[]).flatMap((row) => row.colors ?? [])
+    )
+  ).sort();
+}
 
-    const data = assertOk("products.byCategory", await query);
-    return (data ?? []).map(mapProduct);
+function applyStorefrontFilters<
+  T extends {
+    overlaps: (column: string, value: string[]) => T;
+    gte: (column: string, value: number) => T;
+    lte: (column: string, value: number) => T;
+    eq: (column: string, value: boolean) => T;
+  },
+>(query: T, filters: StorefrontFilters): T {
+  let next = query;
+
+  if (filters.sizes?.length) {
+    next = next.overlaps("sizes", filters.sizes);
   }
-);
+  if (filters.colors?.length) {
+    next = next.overlaps(
+      "colors",
+      filters.colors.map((color) => color.toLowerCase())
+    );
+  }
+  if (filters.minPrice != null) {
+    next = next.gte("effective_price", filters.minPrice);
+  }
+  if (filters.maxPrice != null) {
+    next = next.lte("effective_price", filters.maxPrice);
+  }
+  if (filters.inStock) {
+    next = next.eq("in_stock", true);
+  }
+
+  return next;
+}
+
+function orderCategoryProducts<T extends { order: (column: string, options: { ascending: boolean }) => T }>(
+  query: T,
+  sort: CategorySort
+): T {
+  switch (sort) {
+    case "price_asc":
+      return query.order("effective_price", { ascending: true });
+    case "price_desc":
+      return query.order("effective_price", { ascending: false });
+    case "name_asc":
+      return query.order("name", { ascending: true });
+    case "newest":
+      return query.order("created_at", { ascending: false });
+    default: {
+      const _exhaustive: never = sort;
+      return _exhaustive;
+    }
+  }
+}
 
 export async function getProductsByCategory(
   categoryIds: string[],
-  storefrontFilters: StorefrontFilters = {}
-): Promise<Product[]> {
-  let products = await fetchCategoryProducts(
-    categoryIds,
-    storefrontFilters.inStock === true,
-    storefrontFilters.minPrice ?? null,
-    storefrontFilters.maxPrice ?? null
-  );
+  storefrontFilters: StorefrontFilters = {},
+  options: CategoryProductsOptions = {}
+): Promise<CategoryProductsResult> {
+  if (!categoryIds.length) {
+    return {
+      products: [],
+      total: 0,
+      page: options.page ?? 1,
+      pageSize: options.pageSize ?? PRODUCTS_PAGE_SIZE,
+    };
+  }
 
-  if (storefrontFilters.sizes?.length) {
-    products = products.filter((p) =>
-      storefrontFilters.sizes!.some((size) => p.sizes.includes(size))
-    );
-  }
-  if (storefrontFilters.colors?.length) {
-    products = products.filter((p) =>
-      storefrontFilters.colors!.some((color) =>
-        p.colors.some((c) => c.toLowerCase() === color.toLowerCase())
-      )
-    );
-  }
+  const page = Math.max(1, options.page ?? 1);
+  const pageSize = options.pageSize ?? PRODUCTS_PAGE_SIZE;
+  const sort = options.sort ?? "newest";
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  const supabase = createPublicClient();
+
+  let query = supabase
+    .from("products")
+    .select("*", { count: "exact" })
+    .eq("is_active", true);
 
   if (storefrontFilters.search) {
-    const tokens = tokenizeQuery(storefrontFilters.search);
-    const allCategories = await getAllCategories(true);
-    products = products.filter((p) =>
-      matchesAllTokens(buildProductSearchText(p, allCategories), tokens)
+    const trimmed = storefrontFilters.search.trim().slice(0, MAX_QUERY_LENGTH);
+    const tokens = tokenizeQuery(trimmed);
+    if (!tokens.length) {
+      return { products: [], total: 0, page, pageSize };
+    }
+
+    const rpcData = assertOk(
+      "products.categorySearch",
+      await supabase.rpc("search_products", { q: trimmed, lim: 500 })
     );
+
+    const productIds = ((rpcData ?? []) as Record<string, unknown>[])
+      .map(mapProduct)
+      .filter(
+        (product) =>
+          product.category_id && categoryIds.includes(product.category_id)
+      )
+      .map((product) => product.id);
+
+    if (!productIds.length) {
+      return { products: [], total: 0, page, pageSize };
+    }
+
+    query = query.in("id", productIds);
+  } else {
+    query = query.in("category_id", categoryIds);
   }
 
-  return products;
+  query = applyStorefrontFilters(query, storefrontFilters);
+  query = orderCategoryProducts(query, sort);
+  query = query.range(from, to);
+
+  const { data, error, count } = await query;
+  assertOk("products.byCategory", { data, error });
+
+  return {
+    products: ((data ?? []) as Record<string, unknown>[]).map(mapProduct),
+    total: count ?? 0,
+    page,
+    pageSize,
+  };
 }
 
 /**

@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { REVALIDATE_SECONDS } from "@/constants";
+import { PRODUCTS_PAGE_SIZE, REVALIDATE_SECONDS } from "@/constants";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { CategoryBreadcrumb } from "@/components/storefront/CategoryBreadcrumb";
 import { CategoryFilter } from "@/components/storefront/CategoryFilter";
@@ -11,7 +11,10 @@ import {
   getAllCategories,
   getAllCategorySlugPaths,
 } from "@/lib/queries/categories";
-import { getProductsByCategory } from "@/lib/queries/products";
+import {
+  getCategoryAvailableColors,
+  getProductsByCategory,
+} from "@/lib/queries/products";
 import { splitDescriptionParagraphs } from "@/lib/utils/formatDescription";
 import { getCategoryBreadcrumbPath } from "@/lib/utils/getGenderCategory";
 import type { Category } from "@/types";
@@ -78,11 +81,15 @@ export default async function CategoryPage({
 
   const categoryIds = getDescendantIds(category.id, allCategories);
   const breadcrumb = getCategoryBreadcrumbPath(category.id, allCategories);
-  const products = await getProductsByCategory(categoryIds);
+  const categoryBasePath = `/category/${slug.join("/")}`;
 
-  const availableColors = Array.from(
-    new Set(products.flatMap((product) => product.colors))
-  ).sort();
+  const [initialResult, availableColors] = await Promise.all([
+    getProductsByCategory(categoryIds, {}, {
+      page: 1,
+      pageSize: PRODUCTS_PAGE_SIZE,
+    }),
+    getCategoryAvailableColors(categoryIds),
+  ]);
 
   const descriptionParagraphs = splitDescriptionParagraphs(
     category.description
@@ -121,7 +128,8 @@ export default async function CategoryPage({
           >
             <FilteredProductGrid
               categoryIds={categoryIds}
-              initialProducts={products}
+              categoryBasePath={categoryBasePath}
+              initialResult={initialResult}
             />
           </Suspense>
         </div>
