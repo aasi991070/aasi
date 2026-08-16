@@ -148,11 +148,123 @@ export interface ProductFormData {
   colors: string[];
   images: string[];
   thumbnail_url?: string;
-  in_stock: boolean;
   stock_count: number;
   is_featured: boolean;
   is_active: boolean;
   tags: string[];
+}
+
+export type CartStatus = "active" | "converted" | "abandoned";
+
+export type AddressType = "shipping" | "billing";
+
+export type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "packed"
+  | "shipped"
+  | "delivered"
+  | "cancelled"
+  | "returned";
+
+export type OrderPaymentStatus =
+  | "unpaid"
+  | "paid"
+  | "failed"
+  | "refunded"
+  | "partially_refunded";
+
+export interface OrderAddressSnapshot {
+  name: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country: string;
+  phone?: string;
+}
+
+export interface Cart {
+  id: string;
+  user_id?: string | null;
+  session_id: string;
+  status: CartStatus;
+  currency: string;
+  created_at: string;
+  updated_at: string;
+  expires_at?: string | null;
+  items?: CartItem[];
+}
+
+export interface CartItem {
+  id: string;
+  cart_id: string;
+  product_id: string;
+  variant_id?: string | null;
+  qty: number;
+  unit_price_snapshot: number;
+  created_at: string;
+  product?: Product;
+  variant?: ProductVariant;
+}
+
+export interface Address {
+  id: string;
+  user_id?: string | null;
+  name: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country: string;
+  phone?: string;
+  type: AddressType;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Order {
+  id: string;
+  order_number: string;
+  user_id?: string | null;
+  email: string;
+  phone?: string;
+  status: OrderStatus;
+  payment_status: OrderPaymentStatus;
+  subtotal: number;
+  discount: number;
+  shipping_fee: number;
+  tax: number;
+  total: number;
+  currency: string;
+  coupon_code?: string | null;
+  shipping_address: OrderAddressSnapshot;
+  billing_address?: OrderAddressSnapshot | null;
+  notes?: string;
+  placed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  items?: OrderItem[];
+}
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id?: string | null;
+  variant_id?: string | null;
+  name_snapshot: string;
+  slug_snapshot: string;
+  sku_snapshot?: string;
+  image_snapshot?: string;
+  size?: string;
+  color?: string;
+  qty: number;
+  unit_price: number;
+  tax_rate: number;
+  line_total: number;
+  created_at: string;
 }
 
 export interface DashboardStats {

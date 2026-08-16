@@ -56,7 +56,6 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
       colors: existing?.colors ?? [],
       images: existing?.images ?? [],
       thumbnail_url: existing?.thumbnail_url ?? "",
-      in_stock: existing?.in_stock ?? true,
       stock_count: existing?.stock_count ?? 0,
       is_featured: existing?.is_featured ?? false,
       is_active: existing?.is_active ?? true,
@@ -228,11 +227,10 @@ export function ProductForm({ existing, categories }: ProductFormProps) {
           <div className="space-y-2">
             <Label htmlFor="stock_count">Stock Count</Label>
             <Input id="stock_count" type="number" {...register("stock_count")} />
+            <p className="text-xs v18-text-muted">
+              In-stock status is derived from stock count.
+            </p>
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" {...register("in_stock")} />
-            In stock
-          </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" {...register("is_featured")} />
             Featured

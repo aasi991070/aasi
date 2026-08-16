@@ -35,13 +35,13 @@ without write policies, and `003` supplies the admin-gated replacements once
 Claimed up front so later prompts do not collide. Do not renumber.
 
 ```
-000 baseline schema          01        007 commerce core     22a
-001 site settings            (exists)  008 commerce support  22b
-002 product reviews          (exists)  009 product SEO       23
-003 admin RLS                01        010 shipping rates    25
-004 review moderation        02        011 order events      27b
-005 site content             09a       012 email log         27c
-006 search + indexes         17 (18a and 18b append to it)
+000 baseline schema          01        007 reorder categories  19
+001 site settings            (exists)  008 commerce core     22a
+002 product reviews          (exists)  009 commerce support  22b
+003 admin RLS                01        010 product SEO       23
+004 review moderation        02        011 shipping rates    25
+005 site content             09a       012 order events      27b
+006 search + indexes         17 (18a and 18b append to it)  013 email log 27c
 ```
 
 ## Authorisation model

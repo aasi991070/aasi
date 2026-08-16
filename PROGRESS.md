@@ -78,7 +78,7 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 21-structured-data — **done** (Phase 2 complete)
 
 ## Phase 3 — Commerce
-- [ ] 22a-commerce-schema-core
+- [x] 22a-commerce-schema-core — **done**
 - [ ] 22b-commerce-schema-support
 - [ ] 23-variants-admin
 - [ ] 24a-cart-actions

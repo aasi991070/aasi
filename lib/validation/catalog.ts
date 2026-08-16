@@ -22,7 +22,6 @@ export const productSchema = z.object({
   colors: z.array(z.string()),
   images: z.array(z.string()),
   thumbnail_url: z.string().optional(),
-  in_stock: z.boolean(),
   stock_count: z.coerce.number().min(0),
   is_featured: z.boolean(),
   is_active: z.boolean(),
