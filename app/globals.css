@@ -327,7 +327,7 @@
 }
 
 /* Monochrome mode — remap all UI tokens to grayscale */
-html.monochrome {
+.monochrome {
   --color-v18-primary: #374151;
   --color-v18-primary-mid: #6b7280;
   --color-v18-primary-hover: #1f2937;

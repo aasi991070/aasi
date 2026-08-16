@@ -1,3 +1,6 @@
+import { unstable_cache } from "next/cache";
+import { REVALIDATE_SECONDS } from "@/constants";
+import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { DEFAULT_HERO } from "@/constants";
@@ -104,7 +107,7 @@ const SETTINGS_SELECT =
  */
 async function fetchSiteSettingsUncached(): Promise<SiteSettings> {
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("site_settings")
       .select(SETTINGS_SELECT)
@@ -134,9 +137,11 @@ async function fetchSiteSettingsUncached(): Promise<SiteSettings> {
   }
 }
 
-export async function getSiteSettings(): Promise<SiteSettings> {
-  return fetchSiteSettingsUncached();
-}
+export const getSiteSettings = unstable_cache(
+  fetchSiteSettingsUncached,
+  ["site-settings"],
+  { tags: ["settings"], revalidate: REVALIDATE_SECONDS }
+);
 
 export async function updateSiteSettings(
   settings: Partial<SiteSettings>

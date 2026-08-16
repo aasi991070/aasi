@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { AppToaster } from "@/components/shared/AppToaster";
 import { V18Shell } from "@/components/shared/V18Shell";
+import { MonochromeProvider } from "@/components/providers/MonochromeProvider";
 import { BRAND_ADMIN_NAME } from "@/constants";
+import { getSiteSettings } from "@/lib/queries/settings";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -25,5 +28,12 @@ export default async function AdminCmsLayout({
     redirect("/admin/login");
   }
 
-  return <V18Shell>{children}</V18Shell>;
+  const settings = await getSiteSettings();
+
+  return (
+    <MonochromeProvider initialMonochrome={settings.monochrome_enabled}>
+      <AppToaster />
+      <V18Shell>{children}</V18Shell>
+    </MonochromeProvider>
+  );
 }

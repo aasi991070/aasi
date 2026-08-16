@@ -1,5 +1,7 @@
+import { unstable_cache } from "next/cache";
+import { REVALIDATE_SECONDS } from "@/constants";
 import { assertOk } from "@/lib/errors";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { ProductReview, ReviewSummary } from "@/types";
 
@@ -18,21 +20,42 @@ function isMissingTableError(error: { code?: string; message?: string }) {
   );
 }
 
+function getCachedReviews(productId: string): Promise<ProductReview[]> {
+  return unstable_cache(
+    async () => {
+      const supabase = createPublicClient();
+      const { data, error } = await supabase
+        .from("product_reviews")
+        .select(PUBLIC_REVIEW_COLUMNS)
+        .eq("product_id", productId)
+        .eq("status", "approved")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        if (isMissingTableError(error)) {
+          console.warn(
+            "[reviews] product_reviews table missing — returning empty list until migrations run",
+            error.message
+          );
+          return [];
+        }
+        assertOk("reviews.byProduct", { data, error });
+      }
+
+      return (data ?? []) as ProductReview[];
+    },
+    ["reviews", productId],
+    {
+      tags: ["reviews", `reviews:${productId}`],
+      revalidate: REVALIDATE_SECONDS,
+    }
+  )();
+}
+
 export async function getReviewsByProductId(
   productId: string
 ): Promise<ProductReview[]> {
-  const supabase = await createClient();
-  const data = assertOk(
-    "reviews.byProduct",
-    await supabase
-      .from("product_reviews")
-      .select(PUBLIC_REVIEW_COLUMNS)
-      .eq("product_id", productId)
-      .eq("status", "approved")
-      .order("created_at", { ascending: false })
-  );
-
-  return (data ?? []) as ProductReview[];
+  return getCachedReviews(productId);
 }
 
 export async function getReviewSummary(

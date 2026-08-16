@@ -415,3 +415,15 @@ export async function deleteProduct(id: string): Promise<void> {
     await supabase.from("products").delete().eq("id", id)
   );
 }
+
+export async function getAllActiveProductSlugs(): Promise<string[]> {
+  return cachedProductQuery("products:active-slugs", async () => {
+    const supabase = createPublicClient();
+    const data = assertOk(
+      "products.activeSlugs",
+      await supabase.from("products").select("slug").eq("is_active", true)
+    );
+
+    return (data ?? []).map((row) => String(row.slug));
+  })();
+}

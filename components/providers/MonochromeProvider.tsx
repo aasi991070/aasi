@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { cn } from "@/lib/utils/cn";
 
 interface MonochromeContextValue {
   monochrome: boolean;
@@ -22,39 +23,33 @@ export function useMonochrome() {
   return useContext(MonochromeContext);
 }
 
-function readMonochromeFromDom(): boolean {
-  if (typeof document === "undefined") return false;
-  return document.documentElement.classList.contains("monochrome");
-}
-
 export function MonochromeProvider({
   initialMonochrome,
+  className,
   children,
 }: {
   initialMonochrome: boolean;
+  className?: string;
   children: React.ReactNode;
 }) {
   const [monochrome, setMonochromeState] = useState(initialMonochrome);
 
   const setMonochrome = useCallback((enabled: boolean) => {
     setMonochromeState(enabled);
-    document.documentElement.classList.toggle("monochrome", enabled);
-    document.documentElement.dataset.monochrome = enabled ? "true" : "false";
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("monochrome", initialMonochrome);
-    document.documentElement.dataset.monochrome = initialMonochrome
-      ? "true"
-      : "false";
     setMonochromeState(initialMonochrome);
   }, [initialMonochrome]);
 
   return (
     <MonochromeContext.Provider value={{ monochrome, setMonochrome }}>
-      {children}
+      <div
+        className={cn(className, monochrome && "monochrome")}
+        data-monochrome={monochrome ? "true" : "false"}
+      >
+        {children}
+      </div>
     </MonochromeContext.Provider>
   );
 }
-
-export { readMonochromeFromDom };

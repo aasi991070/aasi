@@ -94,6 +94,25 @@ export async function getAllCategories(activeOnly = false): Promise<Category[]> 
     : fetchCategories(false, false);
 }
 
+export async function getAllCategorySlugPaths(): Promise<{ slug: string[] }[]> {
+  const all = await getAllCategories(true);
+  const byId = new Map(all.map((category) => [category.id, category]));
+
+  const buildPath = (categoryId: string): string[] => {
+    const segments: string[] = [];
+    let current = byId.get(categoryId);
+
+    while (current) {
+      segments.unshift(current.slug);
+      current = current.parent_id ? byId.get(current.parent_id) : undefined;
+    }
+
+    return segments;
+  };
+
+  return all.map((category) => ({ slug: buildPath(category.id) }));
+}
+
 export async function getCategoriesByLevel(
   level: 1 | 2 | 3 | 4,
   activeOnly = false

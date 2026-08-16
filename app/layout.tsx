@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import { BRAND_NAME, BRAND_TAGLINE, BRAND_LOGO_PATH } from "@/constants";
-import { getSiteSettings } from "@/lib/queries/settings";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -37,24 +36,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const settings = await getSiteSettings();
-
   return (
-    <html
-      lang="en"
-      className={settings.monochrome_enabled ? "monochrome" : undefined}
-      data-monochrome={settings.monochrome_enabled ? "true" : "false"}
-      suppressHydrationWarning
-    >
+    <html lang="en" suppressHydrationWarning>
       <body className={`${dmSans.variable} ${cormorant.variable}`}>
-        <Providers initialMonochrome={settings.monochrome_enabled}>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

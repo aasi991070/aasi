@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { DEFAULT_HERO } from "@/constants";
 import { getSiteSettings, updateSiteSettings } from "@/lib/queries/settings";
@@ -51,6 +51,7 @@ export async function PATCH(request: NextRequest) {
     });
 
     revalidatePath("/", "layout");
+    revalidateTag("settings");
 
     return NextResponse.json(settings);
   } catch (error) {

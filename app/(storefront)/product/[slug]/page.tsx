@@ -10,7 +10,11 @@ import {
   getAllCategories,
   getCategoryBreadcrumb,
 } from "@/lib/queries/categories";
-import { getProductBySlug, getRelatedProducts } from "@/lib/queries/products";
+import {
+  getAllActiveProductSlugs,
+  getProductBySlug,
+  getRelatedProducts,
+} from "@/lib/queries/products";
 import {
   getReviewSummary,
   getReviewsByProductId,
@@ -18,6 +22,12 @@ import {
 import { findLevel1Category } from "@/lib/utils/getGenderCategory";
 
 export const revalidate = REVALIDATE_SECONDS;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  const slugs = await getAllActiveProductSlugs();
+  return slugs.map((slug) => ({ slug }));
+}
 
 export async function generateMetadata({
   params,

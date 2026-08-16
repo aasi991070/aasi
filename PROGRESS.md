@@ -6,7 +6,7 @@ Branch: remediation · Started: 16 Aug 2026
 
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
 - **Last push after prompt:** 13-accessibility (attempt failed — GitHub 403 as `alwiarif46`)
-- **Prompts since last push:** 1 (14-dead-code)
+- **Prompts since last push:** 2 (14-dead-code, 15-restore-isr)
 - **Next push after prompt:** 18a-category-query-and-pagination (after 15, 16, 17, 18a)
 
 ## Deploy cadence

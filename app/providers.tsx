@@ -2,31 +2,8 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
-import {
-  MonochromeProvider,
-  useMonochrome,
-} from "@/components/providers/MonochromeProvider";
-import { Toaster } from "@/components/ui/sonner";
 
-function AppToaster() {
-  const { monochrome } = useMonochrome();
-
-  return (
-    <Toaster
-      richColors={!monochrome}
-      closeButton
-      position="top-right"
-    />
-  );
-}
-
-export function Providers({
-  children,
-  initialMonochrome = false,
-}: {
-  children: React.ReactNode;
-  initialMonochrome?: boolean;
-}) {
+export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -40,11 +17,6 @@ export function Providers({
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <MonochromeProvider initialMonochrome={initialMonochrome}>
-        {children}
-        <AppToaster />
-      </MonochromeProvider>
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 }
