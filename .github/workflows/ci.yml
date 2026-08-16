@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main, remediation]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: true
+      E2E_PORT: "3100"
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3100
+      REVIEW_IP_SALT: ci-review-salt-0123456789abcdef0123456789ab
+      REVALIDATE_SECRET: ci-revalidate-secret
+      CRON_SECRET: ci-cron-secret
+      SENTRY_DSN: ""
+      SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Knip
+        run: npm run knip
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase
+        run: supabase start -x studio,imgproxy,logflare,vector
+
+      - name: Reset database (migrations + seed)
+        run: supabase db reset
+
+      - name: Export Supabase credentials
+        run: |
+          supabase status -o env >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres" >> "$GITHUB_ENV"
+
+      - name: Supabase RLS advisors
+        run: npm run test:rls
+
+      - name: Build
+        run: npm run build
+
+      - name: Client bundle secret leak check
+        run: npm run test:secrets
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      - name: Lighthouse CI
+        run: npm run lighthouse

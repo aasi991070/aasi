@@ -1,8 +1,13 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": [
-    "app/**/{page,layout,loading,error,not-found,route,default}.{ts,tsx}",
+    "app/**/{page,layout,loading,error,not-found,route,default,opengraph-image}.{ts,tsx}",
+    "instrumentation.ts",
+    "sentry.client.config.ts",
+    "sentry.server.config.ts",
+    "sentry.edge.config.ts",
     "vitest.config.mts",
+    "playwright.config.ts",
     "tests/**/*.ts"
   ],
   "project": [
@@ -13,7 +18,13 @@
     "constants/**/*.{ts,tsx}",
     "types/**/*.{ts,tsx}"
   ],
-  "ignore": ["components/ui/**", "lib/utils.ts"],
+  "ignore": [
+    "components/ui/**",
+    "lib/utils.ts",
+    "types/database.ts",
+    "components/shared/LoadingSpinner.tsx"
+  ],
+  "ignoreBinaries": ["supabase"],
   "ignoreDependencies": ["tailwindcss", "postcss-load-config"],
   "rules": {
     "files": "error",

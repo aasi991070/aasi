@@ -15,8 +15,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
   const imagePath = getProductImagePaths(product)[0];
   const imageUrl = resolveImageUrl(imagePath);
 
-  const hasSale =
-    product.sale_price != null && product.sale_price < product.price;
+  const hasSale = product.sale_price != null && product.sale_price < product.price;
   const soldOut = !product.in_stock;
 
   return (
@@ -64,7 +63,7 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
           <div className="mt-1 flex items-center gap-2">
             {hasSale ? (
               <>
-                <span className="font-sans text-sm font-medium text-store-accent">
+                <span className="font-sans text-sm font-medium text-store-accent-dark">
                   {formatPrice(product.sale_price!)}
                 </span>
                 <span className="font-sans text-sm text-store-ink-muted line-through">

@@ -11,9 +11,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:rls": "node scripts/check-supabase-rls.mjs",
+    "test:secrets": "node scripts/check-client-env-leak.mjs",
+    "lighthouse": "lhci autorun",
     "gen:types": "supabase gen types typescript --project-id %SUPABASE_PROJECT_ID% > types/database.ts",
     "db:migrate": "node scripts/apply-supabase-migrations.mjs",
-    "knip": "knip"
+    "knip": "knip",
+    "prepare": "husky"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -21,6 +25,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^3.9.1",
     "@react-email/components": "^1.0.12",
+    "@sentry/nextjs": "^10.70.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "@tanstack/react-query": "^5.62.8",
@@ -41,7 +46,9 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
+    "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.62.1",
+    "@sentry/types": "^10.70.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^20",
     "@types/react": "^18",
@@ -49,10 +56,22 @@
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
     "eslint-plugin-unused-imports": "^4.4.1",
+    "husky": "^9.1.7",
     "knip": "^6.32.2",
+    "lint-staged": "^17.3.0",
     "pg": "^8.23.0",
+    "prettier": "^3.9.6",
     "tailwindcss": "^4.0.0",
     "typescript": "^5",
     "vitest": "^4.1.10"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css}": [
+      "prettier --write"
+    ]
   }
 }

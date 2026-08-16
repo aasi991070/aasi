@@ -7,15 +7,16 @@ import AxeBuilder from "@axe-core/playwright";
 
 const routes = [
   { name: "home", path: "/" },
-  { name: "category", path: "/category/mens-clothing" },
+  {
+    name: "category",
+    path: "/category/seed-mens/seed-clothing/seed-shirts/seed-casual",
+  },
   { name: "search", path: "/search?q=shirt" },
   { name: "cart", path: "/cart" },
 ];
 
 for (const route of routes) {
-  test(`${route.name} has no serious or critical axe violations`, async ({
-    page,
-  }) => {
+  test(`${route.name} has no serious or critical axe violations`, async ({ page }) => {
     await page.goto(route.path);
 
     const results = await new AxeBuilder({ page })
@@ -24,8 +25,7 @@ for (const route of routes) {
       .analyze();
 
     const blocking = results.violations.filter(
-      (violation) =>
-        violation.impact === "serious" || violation.impact === "critical"
+      (violation) => violation.impact === "serious" || violation.impact === "critical"
     );
 
     expect(blocking, formatViolations(blocking)).toEqual([]);

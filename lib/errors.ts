@@ -10,6 +10,8 @@
  * empty". Failure throws.
  */
 
+import { captureDataError } from "@/lib/monitoring/captureDataError";
+
 /** Shape of a `postgrest-js` error, kept structural to avoid a type import. */
 interface PostgrestLikeError {
   message?: string;
@@ -48,12 +50,9 @@ export class DataError extends Error {
  * `maybeSingle()` returns for "no such row", which is a real answer and not a
  * failure. Only a non-null `error` throws.
  */
-export function assertOk<T>(
-  op: string,
-  res: { data: T; error: unknown | null }
-): T {
+export function assertOk<T>(op: string, res: { data: T; error: unknown | null }): T {
   if (res.error) {
-    // console.error for now; prompt 28b routes this to Sentry.
+    captureDataError(op, res.error);
     console.error(`[DataError] ${op}`, res.error);
     throw new DataError(op, res.error);
   }
