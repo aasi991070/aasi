@@ -15,7 +15,13 @@ interface CheckoutOrderSummaryProps {
   shippingRateId: string;
   productTaxRates: Record<string, number | null>;
   coupon: Pick<Coupon, "type" | "value"> | null;
+  /** Collapsible summary for small screens (left column). */
   mobileCollapsible?: boolean;
+  /**
+   * Sticky desktop aside. Only enable in the right column — putting it in the
+   * left column covers the address accordion while scrolling.
+   */
+  showDesktopAside?: boolean;
 }
 
 export function CheckoutOrderSummary({
@@ -25,6 +31,7 @@ export function CheckoutOrderSummary({
   productTaxRates,
   coupon,
   mobileCollapsible = true,
+  showDesktopAside = false,
 }: CheckoutOrderSummaryProps) {
   const cart = useCartStore((state) => state.cart) ?? initialCart;
   const applyCartResult = useCartStore((state) => state.applyCartResult);
@@ -34,20 +41,14 @@ export function CheckoutOrderSummary({
   const [isPending, startTransition] = useTransition();
 
   const selectedRate =
-    shippingRates.find((rate) => rate.id === shippingRateId) ??
-    shippingRates[0];
+    shippingRates.find((rate) => rate.id === shippingRateId) ?? shippingRates[0];
 
   const totals = useMemo(() => {
     if (!selectedRate) {
       return null;
     }
 
-    return computeCheckoutPreview(
-      cart,
-      selectedRate,
-      productTaxRates,
-      coupon
-    );
+    return computeCheckoutPreview(cart, selectedRate, productTaxRates, coupon);
   }, [cart, coupon, productTaxRates, selectedRate]);
 
   const handleApplyCoupon = () => {
@@ -156,12 +157,14 @@ export function CheckoutOrderSummary({
 
   return (
     <>
-      <aside className="hidden h-fit border border-store-border bg-store-white p-6 lg:sticky lg:top-24 lg:block">
-        <h2 className="font-sans text-xs uppercase tracking-[0.2em] text-store-ink">
-          Order summary
-        </h2>
-        {summaryBody}
-      </aside>
+      {showDesktopAside ? (
+        <aside className="hidden h-fit border border-store-border bg-store-white p-6 lg:sticky lg:top-24 lg:block">
+          <h2 className="font-sans text-xs uppercase tracking-[0.2em] text-store-ink">
+            Order summary
+          </h2>
+          {summaryBody}
+        </aside>
+      ) : null}
 
       {mobileCollapsible ? (
         <div className="border border-store-border bg-store-white lg:hidden">
@@ -172,8 +175,7 @@ export function CheckoutOrderSummary({
             aria-expanded={mobileOpen}
           >
             <span>
-              Order summary ({cart.itemCount}{" "}
-              {cart.itemCount === 1 ? "item" : "items"})
+              Order summary ({cart.itemCount} {cart.itemCount === 1 ? "item" : "items"})
             </span>
             <span className="font-medium">
               {formatPrice(totals?.total ?? cart.subtotal - cart.discount)}

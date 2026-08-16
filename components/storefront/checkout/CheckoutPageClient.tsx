@@ -22,10 +22,7 @@ import {
 } from "@/lib/checkout/storage";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/hooks/useUiStore";
-import {
-  createOrderSchema,
-  type CreateOrderInput,
-} from "@/lib/validation/checkout";
+import { createOrderSchema, type CreateOrderInput } from "@/lib/validation/checkout";
 import type {
   Address,
   CartSummary,
@@ -37,8 +34,7 @@ import type {
 const fieldClass =
   "min-h-11 w-full border border-store-border bg-store-white px-3 font-sans text-sm text-store-ink outline-none focus:border-store-ink";
 
-const labelClass =
-  "block font-sans text-xs uppercase tracking-[0.15em] text-store-ink";
+const labelClass = "block font-sans text-xs uppercase tracking-[0.15em] text-store-ink";
 
 interface CheckoutPageClientProps {
   initialCart: CartSummary;
@@ -201,9 +197,7 @@ export function CheckoutPageClient({
   const handlePaymentDismissed = () => {
     if (!paymentOrder) return;
 
-    router.push(
-      `/order/${encodeURIComponent(paymentOrder.orderNumber)}?status=failed`
-    );
+    router.push(`/order/${encodeURIComponent(paymentOrder.orderNumber)}?status=failed`);
   };
 
   return (
@@ -229,8 +223,8 @@ export function CheckoutPageClient({
           className="mt-8 border border-store-accent-dark/30 bg-store-accent-dark/5 px-4 py-4 font-sans text-sm text-store-ink"
         >
           <p className="font-medium">
-            {stockIssues.length} item{stockIssues.length === 1 ? "" : "s"}{" "}
-            changed since you opened checkout:
+            {stockIssues.length} item{stockIssues.length === 1 ? "" : "s"} changed since
+            you opened checkout:
           </p>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-store-ink-muted">
             {stockIssues.map((issue) => (
@@ -380,9 +374,7 @@ export function CheckoutPageClient({
                       className={cn(fieldClass, "mt-2")}
                       {...register("shippingAddress.pincode")}
                     />
-                    <FieldError
-                      message={errors.shippingAddress?.pincode?.message}
-                    />
+                    <FieldError message={errors.shippingAddress?.pincode?.message} />
                     {pincodeStatus === "loading" ? (
                       <p className="mt-1 font-sans text-xs text-store-ink-muted">
                         Looking up city and state…
@@ -395,8 +387,7 @@ export function CheckoutPageClient({
                     ) : null}
                     {pincodeStatus === "error" ? (
                       <p className="mt-1 font-sans text-xs text-store-ink-muted">
-                        Could not look up this pincode. Enter city and state
-                        manually.
+                        Could not look up this pincode. Enter city and state manually.
                       </p>
                     ) : null}
                   </div>
@@ -521,6 +512,7 @@ export function CheckoutPageClient({
             productTaxRates={productTaxRates}
             coupon={coupon}
             mobileCollapsible={false}
+            showDesktopAside
           />
 
           <button
