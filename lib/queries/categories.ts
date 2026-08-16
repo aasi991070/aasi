@@ -32,7 +32,7 @@ function cachedCategoryQuery<TArgs extends unknown[], TResult>(
     })();
 }
 
-function buildTree(categories: Category[]): Category[] {
+export function buildTree(categories: Category[]): Category[] {
   const map = new Map<string, Category>();
   const roots: Category[] = [];
 
@@ -257,20 +257,14 @@ export async function deleteCategory(id: string): Promise<void> {
   );
 }
 
-export async function updateCategorySortOrder(
+export async function reorderCategories(
   items: { id: string; sort_order: number }[]
 ): Promise<void> {
   const supabase = await createClient();
-  const results = await Promise.all(
-    items.map(({ id, sort_order }) =>
-      supabase
-        .from("categories")
-        .update({ sort_order, updated_at: new Date().toISOString() })
-        .eq("id", id)
-    )
+  assertOk(
+    "categories.reorder",
+    await supabase.rpc("reorder_categories", { items })
   );
-
-  results.forEach((result) => assertOk("categories.reorder", result));
 }
 
 export async function getCategoryCount(): Promise<number> {

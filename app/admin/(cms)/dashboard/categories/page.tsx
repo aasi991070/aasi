@@ -1,15 +1,12 @@
-"use client";
-
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { CategoryTreeView } from "@/components/admin/CategoryTreeView";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { Button } from "@/components/ui/button";
-import { useCategoryTree } from "@/hooks/useCategories";
+import { getCategoryTree } from "@/lib/queries/categories";
 
-export default function AdminCategoriesPage() {
-  const { data: categories, isLoading } = useCategoryTree();
+export default async function AdminCategoriesPage() {
+  const categories = await getCategoryTree();
 
   return (
     <>
@@ -29,13 +26,7 @@ export default function AdminCategoriesPage() {
         }
       />
 
-      {isLoading ? (
-        <div className="flex justify-center py-20">
-          <LoadingSpinner surface="admin" size="lg" />
-        </div>
-      ) : (
-        <CategoryTreeView categories={categories ?? []} />
-      )}
+      <CategoryTreeView categories={categories} />
     </>
   );
 }

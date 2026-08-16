@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   closestCenter,
@@ -29,7 +30,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CATEGORY_LEVELS } from "@/constants";
-import { useDeleteCategory, useReorderCategories } from "@/hooks/useCategories";
+import {
+  deleteCategoryAction,
+  reorderCategoriesAction,
+} from "@/lib/actions/catalog";
 import { useUiStore } from "@/hooks/useUiStore";
 import type { Category } from "@/types";
 
@@ -41,14 +45,16 @@ function SortableNode({
   category,
   depth,
   onDelete,
+  disabled,
 }: {
   category: Category;
   depth: number;
   onDelete: (id: string) => void;
+  disabled: boolean;
 }) {
   const [expanded, setExpanded] = useState(true);
   const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: category.id });
+    useSortable({ id: category.id, disabled });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -65,7 +71,8 @@ function SortableNode({
       >
         <button
           type="button"
-          className="cursor-grab v18-text-muted"
+          className="cursor-grab v18-text-muted disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={disabled}
           {...attributes}
           {...listeners}
         >
@@ -106,20 +113,22 @@ function SortableNode({
         </Link>
         <button
           type="button"
+          disabled={disabled}
           onClick={() => onDelete(category.id)}
-          className="rounded p-1 v18-text-muted v18-hover-danger"
+          className="rounded p-1 v18-text-muted v18-hover-danger disabled:opacity-50"
         >
           <Trash2 className="size-4" />
         </button>
       </div>
 
-      {expanded && hasChildren && (
+      {expanded && hasChildren ? (
         <CategoryNodes
           categories={category.children!}
           depth={depth + 1}
           onDelete={onDelete}
+          disabled={disabled}
         />
-      )}
+      ) : null}
     </div>
   );
 }
@@ -128,29 +137,41 @@ function CategoryNodes({
   categories,
   depth,
   onDelete,
+  disabled,
 }: {
   categories: Category[];
   depth: number;
   onDelete: (id: string) => void;
+  disabled: boolean;
 }) {
-  const ids = categories.map((c) => c.id);
+  const ids = categories.map((category) => category.id);
 
   return (
     <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-      {categories.map((cat) => (
-        <SortableNode key={cat.id} category={cat} depth={depth} onDelete={onDelete} />
+      {categories.map((category) => (
+        <SortableNode
+          key={category.id}
+          category={category}
+          depth={depth}
+          onDelete={onDelete}
+          disabled={disabled}
+        />
       ))}
     </SortableContext>
   );
 }
 
 export function CategoryTreeView({ categories }: CategoryTreeViewProps) {
+  const router = useRouter();
   const { showToast } = useUiStore();
-  const deleteCategory = useDeleteCategory();
-  const reorderCategories = useReorderCategories();
+  const [isPending, startTransition] = useTransition();
   const [localTree, setLocalTree] = useState(categories);
 
-  const rootIds = useMemo(() => localTree.map((c) => c.id), [localTree]);
+  useEffect(() => {
+    setLocalTree(categories);
+  }, [categories]);
+
+  const rootIds = useMemo(() => localTree.map((category) => category.id), [localTree]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -159,65 +180,89 @@ export function CategoryTreeView({ categories }: CategoryTreeViewProps) {
     })
   );
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
     const reorderSiblings = (nodes: Category[]): Category[] => {
-      const oldIndex = nodes.findIndex((n) => n.id === active.id);
-      const newIndex = nodes.findIndex((n) => n.id === over.id);
+      const oldIndex = nodes.findIndex((node) => node.id === active.id);
+      const newIndex = nodes.findIndex((node) => node.id === over.id);
       if (oldIndex === -1 || newIndex === -1) {
-        return nodes.map((n) => ({
-          ...n,
-          children: n.children ? reorderSiblings(n.children) : undefined,
+        return nodes.map((node) => ({
+          ...node,
+          children: node.children ? reorderSiblings(node.children) : undefined,
         }));
       }
       const updated = [...nodes];
       const [moved] = updated.splice(oldIndex, 1);
       updated.splice(newIndex, 0, moved);
-      return updated.map((n, i) => ({ ...n, sort_order: i }));
+      return updated.map((node, index) => ({ ...node, sort_order: index }));
     };
 
+    const previous = localTree;
     const updated = reorderSiblings(localTree);
     setLocalTree(updated);
 
-    const items = updated.map((c, i) => ({ id: c.id, sort_order: i }));
-    try {
-      await reorderCategories.mutateAsync(items);
-      showToast("Order updated", "success");
-    } catch {
-      showToast("Failed to update order", "error");
-    }
+    const items = updated.map((category, index) => ({
+      id: category.id,
+      sort_order: index,
+    }));
+
+    startTransition(async () => {
+      const result = await reorderCategoriesAction(items);
+      if (result.ok) {
+        showToast("Order updated", "success");
+        router.refresh();
+        return;
+      }
+
+      setLocalTree(previous);
+      showToast(result.message, "error");
+    });
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm("Delete this category?")) return;
-    try {
-      await deleteCategory.mutateAsync(id);
-      showToast("Category deleted", "success");
-    } catch {
-      showToast("Failed to delete category", "error");
-    }
+
+    startTransition(async () => {
+      const result = await deleteCategoryAction(id);
+      if (result.ok) {
+        showToast("Category deleted", "success");
+        router.refresh();
+        return;
+      }
+      showToast(result.message, "error");
+    });
   };
 
   return (
     <div className="v18-card p-4">
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
         <SortableContext items={rootIds} strategy={verticalListSortingStrategy}>
-          {localTree.map((cat) => (
-            <SortableNode key={cat.id} category={cat} depth={0} onDelete={handleDelete} />
+          {localTree.map((category) => (
+            <SortableNode
+              key={category.id}
+              category={category}
+              depth={0}
+              onDelete={handleDelete}
+              disabled={isPending}
+            />
           ))}
         </SortableContext>
       </DndContext>
 
-      {localTree.length === 0 && (
+      {localTree.length === 0 ? (
         <div className="py-12 text-center text-sm v18-text-muted">
           No categories yet.{" "}
           <Button asChild variant="link" className="p-0">
             <Link href="/admin/dashboard/categories/new">Add one</Link>
           </Button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

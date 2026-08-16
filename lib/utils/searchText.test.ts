@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  buildIlikeOrFilter,
   MAX_QUERY_LENGTH,
-  PRODUCT_SEARCH_FIELDS,
   sanitizeToken,
   tokenizeQuery,
 } from "./searchText";
@@ -104,32 +102,6 @@ describe("tokenizeQuery", () => {
       for (const token of tokenizeQuery(query)) {
         expect(token).not.toMatch(STRUCTURAL);
       }
-    }
-  });
-});
-
-describe("buildIlikeOrFilter", () => {
-  it("builds one clause per token per field", () => {
-    expect(buildIlikeOrFilter(["silk"], ["name", "slug"])).toBe(
-      "name.ilike.%silk%,slug.ilike.%silk%"
-    );
-  });
-
-  it("returns an empty string when there is nothing to match", () => {
-    expect(buildIlikeOrFilter([], PRODUCT_SEARCH_FIELDS)).toBe("");
-    expect(buildIlikeOrFilter(["silk"], [])).toBe("");
-  });
-
-  it("produces a filter with no stray delimiters from a hostile query", () => {
-    const filter = buildIlikeOrFilter(
-      tokenizeQuery("a,is_active.eq.false"),
-      PRODUCT_SEARCH_FIELDS
-    );
-
-    // Every clause must be exactly `<field>.ilike.%<token>%` — a token that
-    // smuggled in a comma would produce a clause that fails this.
-    for (const clause of filter.split(",")) {
-      expect(clause).toMatch(/^[a-z_]+\.ilike\.%[\p{L}\p{N}\-_]+%$/u);
     }
   });
 });

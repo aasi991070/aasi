@@ -7,6 +7,7 @@ import {
   createCategory,
   deleteCategory,
   getCategoryById,
+  reorderCategories,
   updateCategory,
 } from "@/lib/queries/categories";
 import {
@@ -188,6 +189,28 @@ export async function deleteCategoryAction(
     return {
       ok: false,
       message: failureMessage(error, "Could not delete the category."),
+    };
+  }
+}
+
+export async function reorderCategoriesAction(
+  items: { id: string; sort_order: number }[]
+): Promise<ActionResult<undefined>> {
+  const admin = await requireAdmin();
+  if (!admin.ok) return { ok: false, message: admin.message };
+
+  if (!items.length) {
+    return { ok: true, data: undefined };
+  }
+
+  try {
+    await reorderCategories(items);
+    revalidateCategory();
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return {
+      ok: false,
+      message: failureMessage(error, "Could not update category order."),
     };
   }
 }

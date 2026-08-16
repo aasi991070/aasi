@@ -1,35 +1,38 @@
-"use client";
-
 import Link from "next/link";
-import { useState } from "react";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ProductTable } from "@/components/admin/ProductTable";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useDeleteProduct, useProducts } from "@/hooks/useProducts";
-import { useUiStore } from "@/hooks/useUiStore";
+import { getProducts } from "@/lib/queries/products";
 
-export default function AdminProductsPage() {
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const { showToast } = useUiStore();
-  const deleteProduct = useDeleteProduct();
-  const { data, isLoading } = useProducts({ search, page, pageSize: 20 });
+const PAGE_SIZE = 20;
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this product?")) return;
-    try {
-      await deleteProduct.mutateAsync(id);
-      showToast("Product deleted", "success");
-    } catch {
-      showToast("Failed to delete product", "error");
-    }
-  };
+function buildProductsQuery(params: { search?: string; page?: number }) {
+  const next = new URLSearchParams();
+  if (params.search) next.set("search", params.search);
+  if (params.page && params.page > 1) next.set("page", String(params.page));
+  const query = next.toString();
+  return query ? `?${query}` : "";
+}
 
-  const totalPages = Math.ceil((data?.total ?? 0) / 20);
+export default async function AdminProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string; page?: string }>;
+}) {
+  const params = await searchParams;
+  const search = params.search?.trim() ?? "";
+  const page = Math.max(1, Number(params.page) || 1);
+
+  const { products, total } = await getProducts({
+    search: search || undefined,
+    page,
+    pageSize: PAGE_SIZE,
+  });
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <>
@@ -49,48 +52,56 @@ export default function AdminProductsPage() {
         }
       />
 
-      <div className="mb-6">
+      <form method="get" className="mb-6">
         <Input
+          name="search"
           placeholder="Search products..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          defaultValue={search}
           className="max-w-sm bg-white"
         />
-      </div>
+      </form>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-xl" />
-          ))}
-        </div>
-      ) : data?.products.length ? (
+      {products.length ? (
         <>
-          <ProductTable products={data.products} onDelete={handleDelete} />
-          {totalPages > 1 && (
-            <div className="mt-6 flex justify-center gap-2">
-              <Button
-                variant="outline"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                Previous
-              </Button>
+          <ProductTable products={products} />
+          {totalPages > 1 ? (
+            <nav
+              aria-label="Products pagination"
+              className="mt-6 flex justify-center gap-2"
+            >
+              {page > 1 ? (
+                <Button asChild variant="outline">
+                  <Link
+                    href={buildProductsQuery({ search, page: page - 1 })}
+                    scroll={false}
+                  >
+                    Previous
+                  </Link>
+                </Button>
+              ) : (
+                <Button variant="outline" disabled>
+                  Previous
+                </Button>
+              )}
               <span className="flex items-center px-4 text-sm text-white">
                 Page {page} of {totalPages}
               </span>
-              <Button
-                variant="outline"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          )}
+              {page < totalPages ? (
+                <Button asChild variant="outline">
+                  <Link
+                    href={buildProductsQuery({ search, page: page + 1 })}
+                    scroll={false}
+                  >
+                    Next
+                  </Link>
+                </Button>
+              ) : (
+                <Button variant="outline" disabled>
+                  Next
+                </Button>
+              )}
+            </nav>
+          ) : null}
         </>
       ) : (
         <EmptyState

@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { RemoteImageWithFallback } from "@/components/shared/RemoteImageWithFallback";
 import { Badge } from "@/components/ui/badge";
@@ -12,16 +14,35 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { deleteProductAction } from "@/lib/actions/catalog";
 import { formatPrice } from "@/lib/utils/formatPrice";
 import { getProductImagePaths, resolveImageUrl } from "@/lib/storage/images";
+import { useUiStore } from "@/hooks/useUiStore";
 import type { Product } from "@/types";
 
 interface ProductTableProps {
   products: Product[];
-  onDelete?: (id: string) => void;
 }
 
-export function ProductTable({ products, onDelete }: ProductTableProps) {
+export function ProductTable({ products }: ProductTableProps) {
+  const router = useRouter();
+  const { showToast } = useUiStore();
+  const [isPending, startTransition] = useTransition();
+
+  const handleDelete = (id: string) => {
+    if (!confirm("Delete this product?")) return;
+
+    startTransition(async () => {
+      const result = await deleteProductAction(id);
+      if (result.ok) {
+        showToast("Product deleted", "success");
+        router.refresh();
+        return;
+      }
+      showToast(result.message, "error");
+    });
+  };
+
   return (
     <div className="v18-card overflow-hidden p-0">
       <Table>
@@ -75,7 +96,9 @@ export function ProductTable({ products, onDelete }: ProductTableProps) {
                         : "v18-status-danger"
                     }
                   >
-                    {product.in_stock ? `${product.stock_count} in stock` : "Out of stock"}
+                    {product.in_stock
+                      ? `${product.stock_count} in stock`
+                      : "Out of stock"}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -98,15 +121,14 @@ export function ProductTable({ products, onDelete }: ProductTableProps) {
                     >
                       <Pencil className="size-4" />
                     </Link>
-                    {onDelete && (
-                      <button
-                        type="button"
-                        onClick={() => onDelete(product.id)}
-                        className="rounded-lg p-2 v18-text-muted v18-hover-danger"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={() => handleDelete(product.id)}
+                      className="rounded-lg p-2 v18-text-muted v18-hover-danger disabled:opacity-50"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
                   </div>
                 </TableCell>
               </TableRow>

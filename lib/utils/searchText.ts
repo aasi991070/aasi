@@ -58,21 +58,6 @@ export const PRODUCT_SEARCH_FIELDS = [
 
 export const CATEGORY_SEARCH_FIELDS = ["name", "slug", "description"] as const;
 
-/**
- * The single place an `or=` filter string is built. Safe only because every
- * token has been through `tokenizeQuery` — do not call it with raw input.
- */
-export function buildIlikeOrFilter(
-  tokens: string[],
-  fields: readonly string[]
-): string {
-  if (!tokens.length || !fields.length) return "";
-
-  return tokens
-    .flatMap((token) => fields.map((field) => `${field}.ilike.%${token}%`))
-    .join(",");
-}
-
 export function buildProductSearchText(
   product: Product,
   allCategories: Category[] = []
