@@ -6,11 +6,14 @@ import { useEffect, useState, useTransition } from "react";
 import { verifyPaymentAction } from "@/lib/actions/payments";
 import { formatPrice } from "@/lib/utils/formatPrice";
 import { RazorpayCheckoutLauncher } from "@/components/storefront/payments/RazorpayCheckoutLauncher";
-import type { Order, OrderItem } from "@/types";
+import { OrderFulfillmentTimeline } from "@/components/storefront/order/OrderFulfillmentTimeline";
+import type { Order, OrderItem, Shipment } from "@/types";
 
 interface OrderStatusClientProps {
   order: Order;
   items: OrderItem[];
+  shipment?: Shipment | null;
+  isSignedInCustomer?: boolean;
 }
 
 type ViewStatus = "processing" | "confirmed" | "failed";
@@ -38,7 +41,12 @@ function resolveInitialStatus(
   return "processing";
 }
 
-export function OrderStatusClient({ order, items }: OrderStatusClientProps) {
+export function OrderStatusClient({
+  order,
+  items,
+  shipment,
+  isSignedInCustomer = false,
+}: OrderStatusClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryStatus = searchParams.get("status");
@@ -142,6 +150,26 @@ export function OrderStatusClient({ order, items }: OrderStatusClientProps) {
             </div>
           ))}
         </div>
+
+        <OrderFulfillmentTimeline status={order.status} shipment={shipment} />
+
+        {!isSignedInCustomer ? (
+          <div className="mt-10 border border-store-border px-6 py-6 text-left">
+            <h2 className="font-sans text-sm text-store-ink">
+              Track this order anytime
+            </h2>
+            <p className="mt-2 font-sans text-sm text-store-ink-muted">
+              Create an account with {order.email} to see this order in your
+              history.
+            </p>
+            <Link
+              href={`/account/sign-in?redirect=${encodeURIComponent(`/order/${order.order_number}`)}&email=${encodeURIComponent(order.email)}`}
+              className="store-btn mt-4 inline-block px-6 py-3 font-sans text-xs uppercase tracking-[0.1em]"
+            >
+              Create account
+            </Link>
+          </div>
+        ) : null}
 
         <Link
           href="/"

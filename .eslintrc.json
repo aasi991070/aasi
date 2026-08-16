@@ -28,6 +28,7 @@
     {
       "files": [
         "app/admin/login/login-client.tsx",
+        "components/storefront/account/AccountSignInClient.tsx",
         "lib/storage/images.ts"
       ],
       "rules": {

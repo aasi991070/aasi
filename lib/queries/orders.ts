@@ -354,3 +354,89 @@ export async function getOrderItems(orderId: string) {
   );
 }
 
+const CUSTOMER_ORDERS_PAGE_SIZE = 10;
+
+export async function getCustomerOrders(page = 1) {
+  const supabase = await createClient();
+  const safePage = Math.max(1, page);
+  const from = (safePage - 1) * CUSTOMER_ORDERS_PAGE_SIZE;
+  const to = from + CUSTOMER_ORDERS_PAGE_SIZE - 1;
+
+  const { data, error, count } = await supabase
+    .from("orders")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    assertOk("orders.customerList", { data: null, error });
+  }
+
+  return {
+    orders: (data ?? []).map((row) => mapOrderRow(row as Record<string, unknown>)),
+    total: count ?? 0,
+    page: safePage,
+    pageSize: CUSTOMER_ORDERS_PAGE_SIZE,
+  };
+}
+
+export async function getCustomerOrderByNumber(orderNumber: string) {
+  const supabase = await createClient();
+  const row = assertOk(
+    "orders.customerByNumber",
+    await supabase
+      .from("orders")
+      .select("*")
+      .eq("order_number", orderNumber)
+      .maybeSingle()
+  );
+
+  return row ? mapOrderRow(row) : null;
+}
+
+export async function getCustomerOrderItems(orderId: string) {
+  const supabase = await createClient();
+  const rows = assertOk(
+    "orders.customerItems",
+    await supabase.from("order_items").select("*").eq("order_id", orderId)
+  );
+
+  return (rows ?? []).map(
+    (row): OrderItem => ({
+      id: String(row.id),
+      order_id: String(row.order_id),
+      product_id: row.product_id != null ? String(row.product_id) : null,
+      variant_id: row.variant_id != null ? String(row.variant_id) : null,
+      name_snapshot: String(row.name_snapshot),
+      slug_snapshot: String(row.slug_snapshot),
+      sku_snapshot:
+        row.sku_snapshot != null ? String(row.sku_snapshot) : undefined,
+      image_snapshot:
+        row.image_snapshot != null ? String(row.image_snapshot) : undefined,
+      size: row.size != null ? String(row.size) : undefined,
+      color: row.color != null ? String(row.color) : undefined,
+      qty: Number(row.qty),
+      unit_price: Number(row.unit_price),
+      tax_rate: Number(row.tax_rate),
+      line_total: Number(row.line_total),
+      created_at: String(row.created_at),
+    })
+  );
+}
+
+export async function countCustomerOrders() {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("orders")
+    .select("id", { count: "exact", head: true });
+
+  if (error) {
+    if (error.code === "PGRST205") {
+      return 0;
+    }
+    assertOk("orders.customerCount", { data: null, error });
+  }
+
+  return count ?? 0;
+}
+

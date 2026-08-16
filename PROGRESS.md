@@ -84,7 +84,7 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 24b-cart-ui — **done**
 - [x] 25-checkout — **done**
 - [x] 26-razorpay — **done**
-- [ ] 27a-customer-accounts
+- [x] 27a-customer-accounts — **done**
 - [ ] 27b-admin-orders
 - [ ] 27c-email-and-verified-reviews
 

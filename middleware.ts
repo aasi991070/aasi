@@ -42,6 +42,24 @@ export async function middleware(request: NextRequest) {
     if (isAdminLogin && user) {
       return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     }
+
+    const isAccountRoute = pathname.startsWith("/account");
+    const isAccountSignIn = pathname === "/account/sign-in";
+
+    if (isAccountRoute && !isAccountSignIn) {
+      const isAnonymous = user?.is_anonymous === true;
+      if (!user || isAnonymous) {
+        const loginUrl = new URL("/account/sign-in", request.url);
+        loginUrl.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+    }
+
+    if (isAccountSignIn && user && user.is_anonymous !== true) {
+      const redirect =
+        request.nextUrl.searchParams.get("redirect") ?? "/account";
+      return NextResponse.redirect(new URL(redirect, request.url));
+    }
   } else {
     response = NextResponse.next({ request });
   }

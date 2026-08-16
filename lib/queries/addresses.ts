@@ -62,3 +62,47 @@ export async function saveUserAddress(
 
   return mapAddress(created);
 }
+
+export async function updateUserAddress(
+  userId: string,
+  addressId: string,
+  address: OrderAddressSnapshot
+): Promise<Address> {
+  const supabase = await createClient();
+  const updated = assertOk(
+    "addresses.update",
+    await supabase
+      .from("addresses")
+      .update({
+        name: address.name,
+        line1: address.line1,
+        line2: address.line2 ?? null,
+        city: address.city,
+        state: address.state,
+        pincode: address.pincode,
+        country: address.country,
+        phone: address.phone ?? null,
+      })
+      .eq("id", addressId)
+      .eq("user_id", userId)
+      .select("*")
+      .single()
+  );
+
+  return mapAddress(updated);
+}
+
+export async function deleteUserAddress(
+  userId: string,
+  addressId: string
+): Promise<void> {
+  const supabase = await createClient();
+  assertOk(
+    "addresses.delete",
+    await supabase
+      .from("addresses")
+      .delete()
+      .eq("id", addressId)
+      .eq("user_id", userId)
+  );
+}

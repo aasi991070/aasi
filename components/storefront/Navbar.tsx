@@ -57,7 +57,6 @@ export async function Navbar() {
 
           <CartButton />
 
-          {/* TODO(27a): /account is created with customer accounts. */}
           <Link
             href="/account"
             aria-label="Account"
