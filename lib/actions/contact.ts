@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { sendContactReceiptEmail } from "@/lib/email/notifications";
 import { createServiceClient } from "@/lib/supabase/service";
 import { hashClientIpFromHeaders } from "@/lib/security/clientIp";
 import { consumeRateLimit } from "@/lib/security/rateLimit";
@@ -65,6 +66,16 @@ export async function contactAction(
       ok: false,
       message: "Something went wrong. Please try again.",
     };
+  }
+
+  try {
+    await sendContactReceiptEmail({
+      name: parsed.data.name,
+      email: parsed.data.email,
+      message: parsed.data.message,
+    });
+  } catch (emailError) {
+    console.warn("[contact] receipt email failed", emailError);
   }
 
   return {

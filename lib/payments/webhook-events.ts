@@ -1,5 +1,9 @@
 import { z } from "zod";
 import {
+  sendOrderConfirmationEmail,
+  sendPaymentFailedEmail,
+} from "@/lib/email/notifications";
+import {
   applyPaymentCaptured,
   applyPaymentFailed,
   applyRefundProcessed,
@@ -69,6 +73,11 @@ export async function handleRazorpayWebhookEvent(
         amountPaise: Number(entity.amount ?? 0),
         rawPayload,
       });
+      try {
+        await sendOrderConfirmationEmail(orderId);
+      } catch (error) {
+        console.warn("[webhook] order confirmation email failed", error);
+      }
       return { handled: true };
     }
 
@@ -89,6 +98,11 @@ export async function handleRazorpayWebhookEvent(
         amountPaise: entity.amount != null ? Number(entity.amount) : undefined,
         rawPayload,
       });
+      try {
+        await sendPaymentFailedEmail(orderId);
+      } catch (error) {
+        console.warn("[webhook] payment failed email failed", error);
+      }
       return { handled: true };
     }
 

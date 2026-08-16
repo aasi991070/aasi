@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createReview, getReviewsByProductId } from "@/lib/queries/reviews";
+import { createClient } from "@/lib/supabase/server";
+import {
+  createReview,
+  findVerifiedOrderIdForProduct,
+  getReviewsByProductId,
+} from "@/lib/queries/reviews";
 import { getProductById } from "@/lib/queries/products";
 import {
   REVIEW_RATE_LIMIT,
@@ -21,7 +26,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "product_id required" }, { status: 400 });
   }
 
-  // getReviewsByProductId filters to status = 'approved'.
   const reviews = await getReviewsByProductId(productId);
   return NextResponse.json(reviews);
 }
@@ -62,9 +66,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fail closed. Without the salt we cannot rate limit or store a hash we
-    // are willing to keep, and submitting anyway would mean an unlimited
-    // anonymous write endpoint.
     const ipHash = hashClientIp(request);
     if (!ipHash) {
       console.error("REVIEW_IP_SALT is not set; refusing review submissions.");
@@ -89,16 +90,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Product not found" }, { status: 404 });
     }
 
-    await createReview({
-      product_id,
-      author_name,
-      rating,
-      body: reviewBody,
-      ip_hash: ipHash,
-    });
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    // 202, not 201: the review exists but is not published, and the client
-    // must not add it to the visible list.
+    let orderId: string | null = null;
+    if (user) {
+      orderId = await findVerifiedOrderIdForProduct(
+        supabase,
+        user.id,
+        product_id
+      );
+    }
+
+    const created = await createReview(
+      {
+        product_id,
+        author_name,
+        rating,
+        body: reviewBody,
+        ip_hash: ipHash,
+        order_id: orderId,
+      },
+      supabase
+    );
+
+    if (created.status === "approved") {
+      return NextResponse.json(
+        {
+          message: "Thanks — your verified review is now live.",
+          verified: true,
+        },
+        { status: 201 }
+      );
+    }
+
     return NextResponse.json(
       { message: "Thanks — your review will appear once it's approved." },
       { status: 202 }

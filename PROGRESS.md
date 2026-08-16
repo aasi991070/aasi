@@ -6,7 +6,7 @@ Branch: remediation · Started: 16 Aug 2026
 
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
 - **Last push after prompt:** 25-checkout (attempt failed — GitHub 403 as `alwiarif46`)
-- **Prompts since last push:** 3 (26, 27a, 27b)
+- **Prompts since last push:** 4 (26, 27a, 27b, 27c)
 - **Next push after prompt:** 28a (5th in batch: 27b, 27c, 28a)
 
 ## Deploy cadence
@@ -110,6 +110,7 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | `010_product_seo_and_variants.sql` | 23 | ☐ |
 | `011_shipping_rates.sql` | 25 | ☐ |
 | `012_order_events.sql` | 27b | ☐ |
+| `013_email_log.sql` | 27c | ☐ |
 
 > **`003` has a required manual follow-up.** Until a row exists in `admin_users`,
 > every catalogue write is denied — including the admin dashboard. Immediately

@@ -11,6 +11,7 @@ async function fetchReviews(productId: string): Promise<ProductReview[]> {
 
 export interface ReviewSubmissionAck {
   message: string;
+  verified?: boolean;
 }
 
 /**

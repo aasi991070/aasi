@@ -131,6 +131,27 @@ export interface ReviewSummary {
   count: number;
 }
 
+export type EmailTemplateName =
+  | "order_confirmation"
+  | "payment_failed"
+  | "order_shipped"
+  | "order_delivered"
+  | "order_cancelled"
+  | "order_refunded"
+  | "review_request"
+  | "contact_receipt";
+
+export interface EmailLogEntry {
+  id: string;
+  order_id?: string | null;
+  to_email: string;
+  template: EmailTemplateName;
+  status: "sent" | "failed";
+  provider_id?: string | null;
+  error?: string | null;
+  created_at: string;
+}
+
 export interface ProductSearchResult {
   product: Product;
   matchedFields: string[];

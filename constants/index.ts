@@ -5,6 +5,8 @@ import {
   FolderTree,
   Settings,
   ShoppingBag,
+  Star,
+  Mail,
 } from "lucide-react";
 
 export const STORAGE_BUCKET = "product-images";
@@ -159,6 +161,18 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
     label: "Orders",
     href: "/admin/dashboard/orders",
     icon: ShoppingBag,
+  },
+  {
+    section: "Sales",
+    label: "Reviews",
+    href: "/admin/dashboard/reviews",
+    icon: Star,
+  },
+  {
+    section: "System",
+    label: "Email failures",
+    href: "/admin/dashboard/emails",
+    icon: Mail,
   },
   {
     section: "System",

@@ -100,7 +100,7 @@ export function ProductReviews({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
-      await submitReview.mutateAsync({
+      const ack = await submitReview.mutateAsync({
         product_id: productId,
         author_name: authorName,
         rating,
@@ -109,7 +109,12 @@ export function ProductReviews({
       setAuthorName("");
       setRating(5);
       setBody("");
-      showToast("Thanks — your review will appear once it's approved", "success");
+      showToast(
+        ack.verified
+          ? "Thanks — your verified review is now live"
+          : ack.message ?? "Thanks — your review will appear once it's approved",
+        "success"
+      );
     } catch (error) {
       showToast(
         error instanceof Error ? error.message : "Failed to submit review",
@@ -180,10 +185,17 @@ export function ProductReviews({
               <ul className="divide-y divide-store-border">
                 {visibleReviews.map((review) => (
                   <li key={review.id} className="py-6">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <p className="font-sans text-sm font-medium text-store-ink">
                         {review.author_name}
                       </p>
+                      {review.order_id ? (
+                        <span className="rounded-full border border-store-border px-2 py-0.5 font-sans text-[10px] uppercase tracking-[0.16em] text-store-accent-dark">
+                          Verified purchase
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="mt-1 flex items-center justify-between gap-2">
                       <StarRating value={review.rating} size="sm" />
                     </div>
                     <p className="mt-3 font-sans text-sm leading-relaxed text-store-ink-muted">
