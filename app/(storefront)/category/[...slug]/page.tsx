@@ -17,7 +17,27 @@ import {
 } from "@/lib/queries/products";
 import { splitDescriptionParagraphs } from "@/lib/utils/formatDescription";
 import { getCategoryBreadcrumbPath } from "@/lib/utils/getGenderCategory";
+import {
+  hasActiveStorefrontFilters,
+  parseCategoryPage,
+  parseStorefrontFilters,
+} from "@/lib/utils/storefrontFilters";
 import type { Category } from "@/types";
+
+function toUrlSearchParams(
+  searchParams: Record<string, string | string[] | undefined>
+): URLSearchParams {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (value == null) continue;
+    if (Array.isArray(value)) {
+      params.set(key, value.join(","));
+    } else {
+      params.set(key, value);
+    }
+  }
+  return params;
+}
 
 export const revalidate = REVALIDATE_SECONDS;
 export const dynamicParams = true;
@@ -56,16 +76,38 @@ function getDescendantIds(categoryId: string, all: Category[]) {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string[] }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const resolvedSearchParams = await searchParams;
   const allCategories = await getAllCategories(true);
   const category = resolveCategoryFromSlugs(slug, allCategories);
   if (!category) return { title: "Category Not Found" };
+
+  const canonicalPath = `/category/${slug.join("/")}`;
+  const urlParams = toUrlSearchParams(resolvedSearchParams);
+  const filters = parseStorefrontFilters(urlParams);
+  const page = parseCategoryPage(urlParams);
+  const isFiltered =
+    hasActiveStorefrontFilters(filters) || page > 1;
+
   return {
     title: category.name,
     description: category.description ?? `Shop ${category.name} at Aasi`,
+    alternates: {
+      canonical: canonicalPath,
+    },
+    ...(isFiltered
+      ? {
+          robots: {
+            index: false,
+            follow: true,
+          },
+        }
+      : {}),
   };
 }
 

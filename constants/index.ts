@@ -13,6 +13,24 @@ export const BRAND_ADMIN_NAME = "Aasi CMS";
 export const BRAND_TAGLINE = "Luxury Clothing";
 export const BRAND_LOGO_PATH = "/logo.png";
 
+/** Public site origin without trailing slash — sitemaps, robots, canonicals. */
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
+  "http://localhost:3000";
+
+/** Static storefront pages included in the sitemap (prompt 09b). */
+export const STATIC_SITEMAP_PATHS = [
+  "/about",
+  "/contact",
+  "/shipping",
+  "/returns",
+  "/size-guide",
+  "/faq",
+  "/privacy",
+  "/terms",
+  "/refund-policy",
+] as const;
+
 export const FOOTER_TAGLINE =
   "Luxury minimal clothing crafted for the modern wardrobe.";
 

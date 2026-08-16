@@ -73,7 +73,7 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 18a-category-query-and-pagination — **done**
 - [x] 18b-filter-ui-and-facets — **done**
 - [x] 19-single-query-layer — **done**
-- [ ] 20-sitemap-robots
+- [x] 20-sitemap-robots — **done**
 - [ ] 21-structured-data
 
 ## Phase 3 — Commerce

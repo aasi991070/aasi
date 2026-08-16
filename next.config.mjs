@@ -25,6 +25,15 @@ const nextConfig = {
     imageSizes: [64, 96, 128, 256, 384],
     minimumCacheTTL: 86400,
   },
+  async redirects() {
+    return [
+      {
+        source: "/products/:slug",
+        destination: "/product/:slug",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchResultCard } from "@/components/storefront/SearchResultCard";
@@ -7,6 +8,29 @@ import { HighlightText } from "@/lib/utils/highlightText";
 import { tokenizeQuery } from "@/lib/utils/searchText";
 import { getAllCategories } from "@/lib/queries/categories";
 import { searchCategories, searchProducts } from "@/lib/queries/search";
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}): Promise<Metadata> {
+  const { q = "" } = await searchParams;
+  const query = q.trim();
+
+  if (query) {
+    return {
+      title: `Results for "${query}"`,
+      robots: {
+        index: false,
+        follow: true,
+      },
+    };
+  }
+
+  return {
+    title: "Search",
+  };
+}
 
 export default async function SearchPage({
   searchParams,

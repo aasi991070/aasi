@@ -608,3 +608,25 @@ export async function getAllActiveProductSlugs(): Promise<string[]> {
     return (data ?? []).map((row) => String(row.slug));
   })();
 }
+
+export async function getActiveProductsForSitemap(): Promise<
+  { slug: string; updated_at: string }[]
+> {
+  return cachedProductQuery("products:sitemap", async () => {
+    const supabase = createPublicClient();
+    const data = assertOk(
+      "products.sitemap",
+      await supabase
+        .from("products")
+        .select("slug, updated_at")
+        .eq("is_active", true)
+    );
+
+    return ((data ?? []) as { slug: string; updated_at: string }[]).map(
+      (row) => ({
+        slug: String(row.slug),
+        updated_at: String(row.updated_at),
+      })
+    );
+  })();
+}
