@@ -35,7 +35,7 @@ Branch: remediation · Started: 16 Aug 2026
 - [x] 07-storefront-shell-swap — **done**
 - [x] 08-navbar-rebuild — **done**
 - [x] 09a-footer — **done**
-- [ ] 09b-static-pages
+- [x] 09b-static-pages — **done**
 - [ ] 10-product-card
 - [ ] 11-image-optimisation
 - [ ] 12a-pdp-layout
@@ -80,6 +80,7 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | `001_site_settings.sql` (amended — drops the two over-broad write policies) | 01 | ☐ |
 | `003_admin_rls.sql` | 01 | ☐ |
 | `004_review_moderation.sql` | 02 | ☐ |
+| `005_site_content.sql` | 09a | ☐ |
 
 > **`003` has a required manual follow-up.** Until a row exists in `admin_users`,
 > every catalogue write is denied — including the admin dashboard. Immediately
