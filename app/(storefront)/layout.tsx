@@ -17,10 +17,7 @@ export default function StorefrontLayout({
 
       <Navbar />
 
-      {/* Navbar is fixed and 80px tall, so the first section would otherwise
-          render underneath it. Prompt 08 rebuilds the navbar as sticky, which
-          reserves its own space and makes this offset unnecessary. */}
-      <main id="content" className="flex-1 pt-20">
+      <main id="content" className="flex-1">
         {children}
       </main>
 

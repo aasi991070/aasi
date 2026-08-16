@@ -65,11 +65,10 @@
   --color-store-accent: #c8a96e;
   --color-store-accent-dark: #9d7f48;
 
-  /* Declared here so Tailwind generates `font-display` / `font-logo`. The real
-     families arrive from next/font, whose classes set these same variables on
-     <body> and so win over these fallbacks. */
+  /* Declared here so Tailwind generates `font-display`. The real family arrives
+     from next/font, whose class sets this same variable on <body> and so wins
+     over the fallback. */
   --font-display: Georgia, "Times New Roman", serif;
-  --font-logo: Georgia, "Times New Roman", serif;
 }
 
 @layer base {
@@ -80,12 +79,6 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans), system-ui, sans-serif;
-
-    /* Has to be redeclared here rather than as `var(--font-display)` inside
-       @theme: a custom property containing var() is resolved where it is
-       declared, so at :root it would capture the Georgia fallback before
-       next/font's class on <body> has supplied the real family. */
-    --font-logo: var(--font-display);
   }
 }
 

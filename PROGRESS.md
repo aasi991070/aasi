@@ -33,7 +33,7 @@ Branch: remediation · Started: 16 Aug 2026
 ## Phase 1 — Storefront rebuild
 - [x] 06-storefront-tokens — **done**
 - [x] 07-storefront-shell-swap — **done**
-- [ ] 08-navbar-rebuild
+- [x] 08-navbar-rebuild — **done**
 - [ ] 09a-footer
 - [ ] 09b-static-pages
 - [ ] 10-product-card
@@ -142,6 +142,15 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | 07 | Restyled more than the six lines the prompt lists. | The prompt names `error.tsx`, `loading.tsx`, `not-found.tsx`, `category:102` and `search:61,91`, but `v18-` also appeared at `search.tsx` 46, 52, 53, 69, 71, 75 and `category` 111. The acceptance criterion is a clean grep, so all of them had to go. Also dropped `onGradient` from `CategoryBreadcrumb` at the category call site — same white-text problem. |
 | 07 | `not-found.tsx` no longer uses `PageHeader`. | It was rendering a `PageHeader` *and* a duplicate paragraph of near-identical copy, which also produced a second `<h1>`. Plain markup is shorter and leaves the page with exactly one heading. Partial overlap with prompt 13, which owns the wider heading-hierarchy fix. |
 | 07 | Added `aria-current="page"` to the active admin nav link. | It was styled as active but not announced as such. One attribute, and I was rewriting the element anyway. |
+| 08 | **Omitted the wishlist icon** the prompt asks for in the header's right cluster. | Nothing in prompts 08–28b ever builds a wishlist: there is no table in `22a`/`22b`, no `/wishlist` route anywhere, and `12a` explicitly says "no wishlist" on the PDP. Shipping the icon would mean a control that is permanently dead. Cart and account are different — `24b` and `27a` fill them in, so they are real links now. Logged under Deferred; it is one `<Link>` to add the day a wishlist is scoped. |
+| 08 | Level-1 items with children are `<button>` disclosures, not links. | The prompt requires `aria-expanded` on the trigger, which is only meaningful on a control. The panel's first row is an "All {name}" link, so the level-1 category page is still one keystroke away. Level-1 items *without* children stay plain links. |
+| 08 | `toNavItems` filters on `level === 1` / `level === 2` rather than trusting the tree shape. | `buildTree` promotes any row with a null `parent_id` to a root regardless of level, and the live data has six such orphans (two level-2, four level-4). Without the filter the masthead read "Clothing · Women's · Footwear · Dress Shirts · Shorts · Chinos". See Deferred — the orphans themselves are a data problem, not a nav one. |
+| 08 | Header scroll state lives in a `NavbarShell` client wrapper plus a `useScrolled` hook; `Navbar` is a server component. | The prompt asked for exactly this split. `NavbarShell` also carries `has-[[data-mega-panel]]:bg-store-white`, which makes the bar opaque while the mega panel is open at scroll top without lifting the panel's state out of `CategoryNav`. |
+| 08 | The mobile menu is a Radix `Sheet` (`w-full`, no close icon) rather than a hand-rolled overlay. | Focus trap, `Escape`, focus restore and body-scroll lock all come from a tested primitive instead of ~80 lines I would have to get right. `shadow-lg` and `bg-background` are overridden to satisfy the no-shadow storefront rule. The trigger is still the text "Menu" the spec asks for, and Radix supplies `aria-expanded`/`aria-controls` on it. |
+| 08 | The cart badge is hidden at zero instead of rendering a literal `0`. | The prompt says to hardcode `0`, and it still is — but a permanent filled dot in the masthead reads as a notification badge, which the storefront rule bars outright. Verified the badge and its `aria-label` by temporarily setting the constant to 3. `24b` only has to change where the number comes from. |
+| 08 | Pointer clicks on a level-1 trigger use a `openBeforePointer` ref rather than a plain state toggle. | Found by testing: pointer activation focuses the button first, `onFocus` opens the panel, and the click that followed immediately closed it again — the trigger looked inert. Keyboard activation is detected via `event.detail === 0` and toggles off current state instead. |
+| 08 | Deleted `--font-logo` from `@theme` and from `body`. | Prompt 06 added it purely so `BrandMark` had something to resolve; this prompt moves `BrandMark` to `font-display`, which was the intended end state. Nothing else referenced it. |
+| 08 | Added a "Search" link at the foot of the mobile menu. | The header search input is `hidden md:block`, so before this there was no way to reach `/search` from a phone. |
 | 05 | Vitest config is `vitest.config.mts`, not `.ts`. | Vitest does not read tsconfig `paths`, so the `@/` alias has to be redeclared or nothing under test resolves. `.mts` avoids a Vite warning about ESM syntax in a file loaded as CommonJS. Also added `test:watch`. |
 
 ## Verification notes

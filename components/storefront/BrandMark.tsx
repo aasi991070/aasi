@@ -7,7 +7,7 @@ type BrandMarkProps = {
 };
 
 const markClassName =
-  "font-logo inline-block text-[1.7rem] font-extrabold leading-none tracking-[0.18em] text-store-ink";
+  "font-display inline-block text-[1.75rem] font-normal leading-none tracking-[0.22em] text-store-ink";
 
 export function BrandMark({ asLink = true, className }: BrandMarkProps) {
   const classes = cn(markClassName, className);

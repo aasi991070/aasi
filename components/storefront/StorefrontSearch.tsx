@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface StorefrontSearchProps {
   className?: string;
@@ -31,15 +32,22 @@ export function StorefrontSearch({
   };
 
   return (
-    <form onSubmit={handleSubmit} className={className}>
+    <form onSubmit={handleSubmit} className={className} role="search">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-v18-muted" />
+        <Search
+          className="pointer-events-none absolute left-0 top-1/2 size-4 -translate-y-1/2 text-store-ink-muted"
+          strokeWidth={1.25}
+          aria-hidden="true"
+        />
         <Input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search products..."
-          className={`h-9 w-64 rounded-[var(--radius-v18-input)] border-v18-border pl-9 ${inputClassName ?? ""}`}
+          placeholder="Search"
+          className={cn(
+            "h-10 w-56 rounded-none border-x-0 border-t-0 border-b border-store-border bg-transparent pl-6 pr-0 font-sans text-sm text-store-ink shadow-none placeholder:text-store-ink-muted focus-visible:border-store-accent-dark focus-visible:ring-0 lg:w-64",
+            inputClassName
+          )}
           aria-label="Search products"
         />
       </div>
