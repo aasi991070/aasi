@@ -209,11 +209,7 @@ export type OrderStatus =
   | "returned";
 
 export type OrderPaymentStatus =
-  | "unpaid"
-  | "paid"
-  | "failed"
-  | "refunded"
-  | "partially_refunded";
+  "unpaid" | "paid" | "failed" | "refunded" | "partially_refunded";
 
 export interface OrderAddressSnapshot {
   name: string;
@@ -288,8 +284,7 @@ export interface CartError {
 }
 
 export type CartActionResult =
-  | { ok: true; cart: CartSummary }
-  | { ok: false; error: CartError };
+  { ok: true; cart: CartSummary } | { ok: false; error: CartError };
 
 export interface Address {
   id: string;
@@ -352,12 +347,7 @@ export interface OrderItem {
 export type PaymentProvider = "razorpay";
 
 export type PaymentStatus =
-  | "created"
-  | "authorized"
-  | "captured"
-  | "failed"
-  | "refunded"
-  | "partially_refunded";
+  "created" | "authorized" | "captured" | "failed" | "refunded" | "partially_refunded";
 
 export interface Payment {
   id: string;
@@ -372,12 +362,7 @@ export interface Payment {
   created_at: string;
 }
 
-export type InventoryMoveReason =
-  | "order"
-  | "cancel"
-  | "return"
-  | "manual"
-  | "restock";
+export type InventoryMoveReason = "order" | "cancel" | "return" | "manual" | "restock";
 
 export interface InventoryMove {
   id: string;
@@ -415,11 +400,7 @@ export interface ShippingRate {
 }
 
 export type CheckoutErrorCode =
-  | "EMPTY_CART"
-  | "STOCK_CHANGED"
-  | "INVALID_COUPON"
-  | "INVALID_INPUT"
-  | "UNKNOWN";
+  "EMPTY_CART" | "STOCK_CHANGED" | "INVALID_COUPON" | "INVALID_INPUT" | "UNKNOWN";
 
 export interface CheckoutStockIssue {
   itemId: string;
@@ -549,4 +530,6 @@ export interface SiteSettings {
   hero_cta_label: string;
   hero_cta_href: string;
   hero_image_url: string;
+  /** Optional multi-image hero; falls back to hero_image_url then catalogue. */
+  hero_image_urls?: string[];
 }

@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { RemoteImage } from "@/components/shared/RemoteImage";
+import { ImageSlideshow } from "@/components/storefront/ImageSlideshow";
+import type { SlideshowImage } from "@/constants/heroImages";
 
 interface HeroProps {
   title?: string;
   subtitle?: string;
   ctaLabel?: string;
   ctaHref?: string;
-  imageSrc: string;
+  images: SlideshowImage[];
 }
 
 export function Hero({
@@ -14,17 +15,16 @@ export function Hero({
   subtitle = "Discover our curated collection of luxury essentials",
   ctaLabel = "Explore Collection",
   ctaHref = "/category/mens",
-  imageSrc,
+  images,
 }: HeroProps) {
   return (
     <section className="relative left-1/2 mb-12 min-h-[90vh] w-screen max-w-[100vw] -translate-x-1/2 overflow-hidden">
-      <RemoteImage
-        src={imageSrc}
-        alt=""
-        fill
-        priority
-        className="object-cover"
-        sizes="100vw"
+      <ImageSlideshow
+        images={images}
+        variant="hero"
+        priorityFirst
+        label="Homepage hero"
+        className="absolute inset-0"
       />
 
       <div

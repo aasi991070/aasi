@@ -15,6 +15,28 @@ interface HeroSettingsFormProps {
   initial: SiteSettings;
 }
 
+function initialStoragePaths(settings: SiteSettings): string[] {
+  const urls = settings.hero_image_urls?.length
+    ? settings.hero_image_urls
+    : settings.hero_image_url
+      ? [settings.hero_image_url]
+      : [];
+
+  return urls.filter(
+    (url) =>
+      url.startsWith("products/") ||
+      url.startsWith("hero/") ||
+      (!url.startsWith("http") && url.length > 0)
+  );
+}
+
+function initialExternalUrl(settings: SiteSettings): string {
+  const candidate =
+    settings.hero_image_urls?.find((url) => url.startsWith("http")) ??
+    (settings.hero_image_url.startsWith("http") ? settings.hero_image_url : "");
+  return candidate;
+}
+
 export function HeroSettingsForm({ initial }: HeroSettingsFormProps) {
   const router = useRouter();
   const { showToast } = useUiStore();
@@ -24,22 +46,37 @@ export function HeroSettingsForm({ initial }: HeroSettingsFormProps) {
   const [subtitle, setSubtitle] = useState(initial.hero_subtitle);
   const [ctaLabel, setCtaLabel] = useState(initial.hero_cta_label);
   const [ctaHref, setCtaHref] = useState(initial.hero_cta_href);
-  const [imagePath, setImagePath] = useState(
-    initial.hero_image_url.startsWith("http") ||
-      initial.hero_image_url.startsWith("products/")
-      ? initial.hero_image_url
-      : ""
-  );
-  const [imagePaths, setImagePaths] = useState<string[]>(
-    imagePath && !imagePath.startsWith("http") ? [imagePath] : []
+  const [externalUrl, setExternalUrl] = useState(initialExternalUrl(initial));
+  const [imagePaths, setImagePaths] = useState<string[]>(initialStoragePaths(initial));
+  const [externalUrlsText, setExternalUrlsText] = useState(
+    (initial.hero_image_urls ?? [])
+      .filter((url) => url.startsWith("http"))
+      .join("\n") || (initialExternalUrl(initial) ? initialExternalUrl(initial) : "")
   );
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const hero_image_url =
-        imagePaths[0] ??
-        (imagePath.startsWith("http") ? imagePath : initial.hero_image_url);
+      const pastedUrls = externalUrlsText
+        .split(/[\n,]+/)
+        .map((url) => url.trim())
+        .filter((url) => url.startsWith("http"));
+
+      const singleExternal = externalUrl.trim().startsWith("http")
+        ? externalUrl.trim()
+        : null;
+
+      const hero_image_urls = [
+        ...imagePaths,
+        ...pastedUrls,
+        ...(singleExternal && !pastedUrls.includes(singleExternal)
+          ? [singleExternal]
+          : []),
+      ].filter(Boolean);
+
+      const uniqueUrls = [...new Set(hero_image_urls)];
+
+      const hero_image_url = uniqueUrls[0] ?? initial.hero_image_url;
 
       await updateSettings.mutateAsync({
         hero_title: title,
@@ -47,6 +84,7 @@ export function HeroSettingsForm({ initial }: HeroSettingsFormProps) {
         hero_cta_label: ctaLabel,
         hero_cta_href: ctaHref,
         hero_image_url,
+        hero_image_urls: uniqueUrls.length > 0 ? uniqueUrls : undefined,
       });
 
       showToast("Hero banner updated", "success");
@@ -102,22 +140,30 @@ export function HeroSettingsForm({ initial }: HeroSettingsFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label>Hero image</Label>
+        <Label>Hero images</Label>
         <ImageUploader
           value={imagePaths}
           onChange={(paths) => {
             setImagePaths(paths);
-            if (paths[0]) setImagePath(paths[0]);
           }}
           folder="hero"
         />
         <p className="text-xs v18-text-muted">
-          Or paste an external image URL:
+          Upload multiple images for the homepage slideshow. Or paste external image
+          URLs (one per line):
         </p>
-        <Input
-          value={imagePath.startsWith("http") ? imagePath : ""}
-          onChange={(e) => setImagePath(e.target.value)}
-          placeholder="https://..."
+        <Textarea
+          value={externalUrlsText}
+          onChange={(e) => {
+            setExternalUrlsText(e.target.value);
+            const first = e.target.value
+              .split(/[\n,]+/)
+              .map((url) => url.trim())
+              .find((url) => url.startsWith("http"));
+            setExternalUrl(first ?? "");
+          }}
+          rows={3}
+          placeholder={"https://...\nhttps://..."}
         />
       </div>
 

@@ -2,9 +2,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Hero } from "@/components/storefront/Hero";
+import { FeaturedSlideshow } from "@/components/storefront/FeaturedSlideshow";
 import { ProductGrid } from "@/components/storefront/ProductGrid";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { GenderToggle } from "@/components/storefront/GenderToggle";
+import type { SlideshowImage } from "@/constants/heroImages";
 import type { Category, Product } from "@/types";
 
 interface HomePageClientProps {
@@ -16,8 +18,9 @@ interface HomePageClientProps {
     subtitle: string;
     ctaLabel: string;
     ctaHref: string;
-    imageSrc: string;
+    images: SlideshowImage[];
   };
+  featuredImages: SlideshowImage[];
 }
 
 export function HomePageClient({
@@ -25,13 +28,14 @@ export function HomePageClient({
   newArrivals,
   categoryCards,
   hero,
+  featuredImages,
 }: HomePageClientProps) {
   return (
     <>
       <Hero {...hero} />
 
       <div className="mx-auto max-w-7xl px-6 pb-12 lg:px-8">
-        <PageHeader title="Featured" subtitle="Curated selections from our collection" />
+        <FeaturedSlideshow images={featuredImages} />
         <ProductGrid products={featured} />
 
         <div className="mt-12">

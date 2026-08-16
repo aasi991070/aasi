@@ -23,14 +23,28 @@ function isMissingTableError(error: { code?: string; message?: string }) {
   );
 }
 
+function normalizeHeroImageUrls(raw: Partial<SiteSettings>): string[] | undefined {
+  if (!Array.isArray(raw.hero_image_urls)) return undefined;
+
+  const urls = raw.hero_image_urls
+    .map((url) => (typeof url === "string" ? url.trim() : ""))
+    .filter(Boolean);
+
+  return urls.length > 0 ? urls : undefined;
+}
+
 function normalizeSettings(raw: Partial<SiteSettings>): SiteSettings {
+  const hero_image_url = raw.hero_image_url?.trim() || DEFAULT_HERO.hero_image_url;
+  const hero_image_urls = normalizeHeroImageUrls(raw);
+
   return {
     monochrome_enabled: Boolean(raw.monochrome_enabled),
     hero_title: raw.hero_title?.trim() || DEFAULT_HERO.hero_title,
     hero_subtitle: raw.hero_subtitle?.trim() || DEFAULT_HERO.hero_subtitle,
     hero_cta_label: raw.hero_cta_label?.trim() || DEFAULT_HERO.hero_cta_label,
     hero_cta_href: raw.hero_cta_href?.trim() || DEFAULT_HERO.hero_cta_href,
-    hero_image_url: raw.hero_image_url?.trim() || DEFAULT_HERO.hero_image_url,
+    hero_image_url,
+    ...(hero_image_urls ? { hero_image_urls } : {}),
   };
 }
 
@@ -57,7 +71,10 @@ async function getSettingsFromStorage(): Promise<SiteSettings> {
       .download(STORAGE_PATH);
 
     if (error) {
-      if (error.message.includes("not found") || error.message.includes("Object not found")) {
+      if (
+        error.message.includes("not found") ||
+        error.message.includes("Object not found")
+      ) {
         return DEFAULT_SETTINGS;
       }
       throw error;
@@ -69,10 +86,7 @@ async function getSettingsFromStorage(): Promise<SiteSettings> {
   } catch (error) {
     // Deliberate fallback — the site must still render with default copy —
     // but never a silent one.
-    console.error(
-      "[settings] storage fallback failed, using built-in defaults",
-      error
-    );
+    console.error("[settings] storage fallback failed, using built-in defaults", error);
     return DEFAULT_SETTINGS;
   }
 }
@@ -127,12 +141,20 @@ async function fetchSiteSettingsUncached(): Promise<SiteSettings> {
 
     if (!data) return DEFAULT_SETTINGS;
 
-    return normalizeSettings(data as Partial<SiteSettings>);
+    const fromDb = normalizeSettings(data as Partial<SiteSettings>);
+    // Multi-image hero lives in storage JSON (no DB column yet).
+    const fromStorage = await getSettingsFromStorage();
+    if (fromStorage.hero_image_urls?.length) {
+      return normalizeSettings({
+        ...fromDb,
+        hero_image_urls: fromStorage.hero_image_urls,
+        hero_image_url: fromStorage.hero_image_urls[0] ?? fromDb.hero_image_url,
+      });
+    }
+
+    return fromDb;
   } catch (error) {
-    console.error(
-      "[settings] read failed, falling back to storage",
-      error
-    );
+    console.error("[settings] read failed, falling back to storage", error);
     return getSettingsFromStorage();
   }
 }
@@ -146,13 +168,14 @@ export const getSiteSettings = unstable_cache(
 export async function updateSiteSettings(
   settings: Partial<SiteSettings>
 ): Promise<SiteSettings> {
+  const { hero_image_urls, ...dbFields } = settings;
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("site_settings")
     .upsert(
       {
         id: 1,
-        ...settings,
+        ...dbFields,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "id" }
@@ -161,7 +184,13 @@ export async function updateSiteSettings(
     .single();
 
   if (!error) {
-    return normalizeSettings(data as Partial<SiteSettings>);
+    const fromDb = normalizeSettings(data as Partial<SiteSettings>);
+    // Persist multi-image list in storage so it survives without a DB column.
+    return saveSettingsToStorage({
+      ...fromDb,
+      ...settings,
+      ...(hero_image_urls !== undefined ? { hero_image_urls } : {}),
+    });
   }
 
   if (isMissingTableError(error)) {
