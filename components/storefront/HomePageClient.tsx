@@ -6,7 +6,7 @@ import { FeaturedSlideshow } from "@/components/storefront/FeaturedSlideshow";
 import { ProductGrid } from "@/components/storefront/ProductGrid";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { GenderToggle } from "@/components/storefront/GenderToggle";
-import type { SlideshowImage } from "@/constants/heroImages";
+import type { SlideshowImage, SuitSlide } from "@/constants/heroImages";
 import type { Category, Product } from "@/types";
 
 interface HomePageClientProps {
@@ -18,7 +18,7 @@ interface HomePageClientProps {
     subtitle: string;
     ctaLabel: string;
     ctaHref: string;
-    images: SlideshowImage[];
+    slides: SuitSlide[];
   };
   featuredImages: SlideshowImage[];
 }

@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { ImageSlideshow } from "@/components/storefront/ImageSlideshow";
-import type { SlideshowImage } from "@/constants/heroImages";
+import type { SuitSlide } from "@/constants/heroImages";
 
 interface HeroProps {
   title?: string;
   subtitle?: string;
   ctaLabel?: string;
   ctaHref?: string;
-  images: SlideshowImage[];
+  slides: SuitSlide[];
 }
 
 export function Hero({
@@ -15,12 +15,12 @@ export function Hero({
   subtitle = "Discover our curated collection of luxury essentials",
   ctaLabel = "Explore Collection",
   ctaHref = "/category/mens",
-  images,
+  slides,
 }: HeroProps) {
   return (
     <section className="relative left-1/2 mb-12 min-h-[90vh] w-screen max-w-[100vw] -translate-x-1/2 overflow-hidden">
       <ImageSlideshow
-        images={images}
+        slides={slides}
         variant="hero"
         priorityFirst
         label="Homepage hero"

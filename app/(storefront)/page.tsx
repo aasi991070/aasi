@@ -1,8 +1,9 @@
 import { DEFAULT_HERO, REVALIDATE_SECONDS } from "@/constants";
 import {
   FEATURED_SLIDESHOW_IMAGES,
-  HERO_SLIDESHOW_IMAGES,
+  HERO_SUIT_SLIDES,
   type SlideshowImage,
+  type SuitSlide,
 } from "@/constants/heroImages";
 import { HomePageClient } from "@/components/storefront/HomePageClient";
 import { getHomeCategoryCards } from "@/lib/queries/categories";
@@ -22,28 +23,65 @@ function resolveHeroImageSrc(imageUrl: string | null | undefined): string | null
   return trimmed;
 }
 
-function buildHeroImages(settings: {
+function toSlideshowImage(src: string, alt: string): SlideshowImage {
+  return { src, alt };
+}
+
+function padTrio(
+  photos: SlideshowImage[]
+): [SlideshowImage, SlideshowImage, SlideshowImage] {
+  const last = photos[photos.length - 1]!;
+  while (photos.length < 3) {
+    photos.push(last);
+  }
+  return [photos[0]!, photos[1]!, photos[2]!];
+}
+
+function chunkIntoSuitSlides(images: SlideshowImage[]): SuitSlide[] {
+  if (images.length === 0) return [];
+
+  const slides: SuitSlide[] = [];
+  for (let i = 0; i < images.length; i += 3) {
+    const chunk = images.slice(i, i + 3);
+    const photos = padTrio([...chunk]);
+    slides.push({
+      id: `cms-${i / 3}`,
+      label: `Hero look ${slides.length + 1}`,
+      photos,
+    });
+  }
+  return slides;
+}
+
+function buildHeroSlides(settings: {
   hero_image_url: string;
   hero_image_urls?: string[];
-}): SlideshowImage[] {
+}): SuitSlide[] {
   const fromCms = (settings.hero_image_urls ?? [])
     .map((url) => resolveHeroImageSrc(url))
     .filter((src): src is string => Boolean(src))
-    .map((src, index) => ({
-      src,
-      alt: `Hero image ${index + 1}`,
-    }));
+    .map((src, index) => toSlideshowImage(src, `Hero image ${index + 1}`));
 
-  if (fromCms.length > 0) return fromCms;
+  if (fromCms.length > 0) {
+    return chunkIntoSuitSlides(fromCms);
+  }
 
   const single = resolveHeroImageSrc(settings.hero_image_url);
   const isDefaultSingle = !single || single === DEFAULT_HERO.hero_image_url;
 
   if (!isDefaultSingle) {
-    return [{ src: single, alt: "Hero banner" }, ...HERO_SLIDESHOW_IMAGES];
+    const photo = toSlideshowImage(single, "Hero banner");
+    return [
+      {
+        id: "cms-single",
+        label: "Hero banner",
+        photos: [photo, photo, photo],
+      },
+      ...HERO_SUIT_SLIDES,
+    ];
   }
 
-  return HERO_SLIDESHOW_IMAGES;
+  return HERO_SUIT_SLIDES;
 }
 
 export default async function HomePage() {
@@ -64,7 +102,7 @@ export default async function HomePage() {
         subtitle: settings.hero_subtitle,
         ctaLabel: settings.hero_cta_label,
         ctaHref: settings.hero_cta_href,
-        images: buildHeroImages(settings),
+        slides: buildHeroSlides(settings),
       }}
       featuredImages={FEATURED_SLIDESHOW_IMAGES}
     />

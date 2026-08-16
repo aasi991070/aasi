@@ -4,34 +4,40 @@ import Image from "next/image";
 import { useCallback, useEffect, useId, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import type { SlideshowImage } from "@/constants/heroImages";
+import type { SlideshowImage, SuitSlide } from "@/constants/heroImages";
 
 const BLUR_DATA_URL =
   "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4IDgiPjxyZWN0IGZpbGw9IiNmYWZhZjgiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiLz48L3N2Zz4=";
 
 const AUTO_ADVANCE_MS = 5000;
 
-interface ImageSlideshowProps {
-  images: SlideshowImage[];
+type ImageSlideshowProps = {
   variant: "hero" | "featured";
   priorityFirst?: boolean;
   className?: string;
   label?: string;
-}
+} & (
+  { slides: SuitSlide[]; images?: never } | { images: SlideshowImage[]; slides?: never }
+);
 
-export function ImageSlideshow({
-  images,
-  variant,
-  priorityFirst = false,
-  className,
-  label = "Image slideshow",
-}: ImageSlideshowProps) {
+export function ImageSlideshow(props: ImageSlideshowProps) {
+  const {
+    variant,
+    priorityFirst = false,
+    className,
+    label = "Image slideshow",
+  } = props;
+
+  const isHeroTriptych = variant === "hero" && Boolean(props.slides);
+  const slides = props.slides ?? [];
+  const images = props.images ?? [];
+  const count = isHeroTriptych ? slides.length : images.length;
+
   const labelId = useId();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
 
-  const count = images.length;
   const safeIndex = count === 0 ? 0 : Math.min(index, count - 1);
 
   useEffect(() => {
@@ -67,7 +73,12 @@ export function ImageSlideshow({
     );
   }
 
-  const sizes = variant === "hero" ? "100vw" : "(max-width: 1280px) 100vw, 1280px";
+  const liveLabel = isHeroTriptych
+    ? (slides[safeIndex]?.label ?? "")
+    : (images[safeIndex]?.alt ?? "");
+
+  const heroPanelSizes = "(max-width: 768px) 33vw, 33vw";
+  const featuredSizes = "(max-width: 1280px) 100vw, 1280px";
 
   return (
     <div
@@ -100,60 +111,68 @@ export function ImageSlideshow({
       </span>
 
       <div className="sr-only" aria-live="polite" aria-atomic="true">
-        {`Slide ${safeIndex + 1} of ${count}: ${images[safeIndex]?.alt ?? ""}`}
+        {`Slide ${safeIndex + 1} of ${count}: ${liveLabel}`}
       </div>
 
-      {images.map((image, i) => {
-        const isActive = i === safeIndex;
-        return (
-          <div
-            key={`${image.src}-${i}`}
-            className={cn(
-              "absolute inset-0 bg-store-ink transition-opacity duration-700 ease-out motion-reduce:transition-none",
-              isActive ? "opacity-100" : "opacity-0"
-            )}
-            aria-hidden={!isActive}
-          >
-            {variant === "hero" ? (
-              <>
-                {/* Soft full-bleed fill so portrait shots don’t leave empty bars */}
-                <Image
-                  src={image.src}
-                  alt=""
-                  fill
-                  priority={priorityFirst && i === 0}
-                  className="object-cover opacity-40 blur-2xl scale-110"
-                  sizes={sizes}
-                  aria-hidden="true"
-                />
-                <Image
-                  src={image.src}
-                  alt={isActive ? image.alt : ""}
-                  fill
-                  priority={priorityFirst && i === 0}
-                  className="object-contain object-center"
-                  sizes={sizes}
-                  placeholder="blur"
-                  blurDataURL={BLUR_DATA_URL}
-                />
-              </>
-            ) : (
+      {isHeroTriptych ? (
+        <div
+          className="flex h-full transition-transform duration-700 ease-out motion-reduce:transition-none"
+          style={{ transform: `translateX(-${safeIndex * 100}%)` }}
+        >
+          {slides.map((slide, slideIndex) => (
+            <div
+              key={slide.id}
+              className="grid h-full w-full shrink-0 grid-cols-3 gap-px bg-store-ink"
+              aria-hidden={slideIndex !== safeIndex}
+            >
+              {slide.photos.map((photo, photoIndex) => (
+                <div
+                  key={`${slide.id}-${photoIndex}`}
+                  className="relative h-full min-h-0"
+                >
+                  <Image
+                    src={photo.src}
+                    alt={slideIndex === safeIndex ? photo.alt : ""}
+                    fill
+                    priority={priorityFirst && slideIndex === 0 && photoIndex === 0}
+                    className="object-cover object-top"
+                    sizes={heroPanelSizes}
+                    placeholder="blur"
+                    blurDataURL={BLUR_DATA_URL}
+                  />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : (
+        images.map((image, i) => {
+          const isActive = i === safeIndex;
+          return (
+            <div
+              key={`${image.src}-${i}`}
+              className={cn(
+                "absolute inset-0 bg-store-ink transition-opacity duration-700 ease-out motion-reduce:transition-none",
+                isActive ? "opacity-100" : "opacity-0"
+              )}
+              aria-hidden={!isActive}
+            >
               <Image
                 src={image.src}
                 alt={isActive ? image.alt : ""}
                 fill
                 priority={priorityFirst && i === 0}
                 className="object-cover object-top"
-                sizes={sizes}
+                sizes={featuredSizes}
                 placeholder="blur"
                 blurDataURL={BLUR_DATA_URL}
               />
-            )}
-          </div>
-        );
-      })}
+            </div>
+          );
+        })
+      )}
 
-      {count > 1 && !reduceMotion ? (
+      {count > 1 ? (
         <>
           <button
             type="button"
@@ -188,7 +207,7 @@ export function ImageSlideshow({
             role="tablist"
             aria-label="Slide selectors"
           >
-            {images.map((_, i) => (
+            {Array.from({ length: count }, (_, i) => (
               <button
                 key={`dot-${i}`}
                 type="button"
