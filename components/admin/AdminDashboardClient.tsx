@@ -1,7 +1,7 @@
 "use client";
 
 import { Package, FolderTree, AlertTriangle, LayoutDashboard } from "lucide-react";
-import { PageHeader } from "@/components/admin/PageHeader";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { ProductTable } from "@/components/admin/ProductTable";
 import { StatCard } from "@/components/admin/StatCard";
 import type { DashboardStats, Product } from "@/types";
@@ -18,6 +18,7 @@ export function AdminDashboardClient({
   return (
     <>
       <PageHeader
+        surface="admin"
         as="h1"
         title="Dashboard"
         subtitle="Overview of your store performance"
@@ -32,7 +33,7 @@ export function AdminDashboardClient({
       </div>
 
       <div>
-        <PageHeader title="Recent Products" subtitle="Latest catalog updates" />
+        <PageHeader surface="admin" title="Recent Products" subtitle="Latest catalog updates" />
         <ProductTable products={recentProducts} />
       </div>
     </>

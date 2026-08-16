@@ -1,4 +1,4 @@
-import { PageHeader } from "@/components/admin/PageHeader";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { MonochromeToggle } from "@/components/admin/MonochromeToggle";
 import { HeroSettingsForm } from "@/components/admin/HeroSettingsForm";
 import { BRAND_NAME, BRAND_TAGLINE, REVALIDATE_SECONDS } from "@/constants";
@@ -10,6 +10,7 @@ export default async function AdminSettingsPage() {
   return (
     <>
       <PageHeader
+        surface="admin"
         as="h1"
         title="Settings"
         subtitle="Store configuration and appearance"

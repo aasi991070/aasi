@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { PageHeader } from "@/components/admin/PageHeader";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { getCategoryTree } from "@/lib/queries/categories";
 import { getProductById } from "@/lib/queries/products";
@@ -22,6 +22,7 @@ export default async function EditProductPage({
   return (
     <>
       <PageHeader
+        surface="admin"
         as="h1"
         title="Edit Product"
         subtitle={product.name}

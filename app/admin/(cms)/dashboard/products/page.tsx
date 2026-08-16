@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { PageHeader } from "@/components/admin/PageHeader";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { ProductTable } from "@/components/admin/ProductTable";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ export default function AdminProductsPage() {
   return (
     <>
       <PageHeader
+        surface="admin"
         as="h1"
         title="Products"
         subtitle="Manage your product catalog"

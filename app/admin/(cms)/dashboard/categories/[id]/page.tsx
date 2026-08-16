@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { PageHeader } from "@/components/admin/PageHeader";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { CategoryForm } from "@/components/admin/CategoryForm";
 import { getCategoryById, getCategoryTree } from "@/lib/queries/categories";
 
@@ -21,6 +21,7 @@ export default async function EditCategoryPage({
   return (
     <>
       <PageHeader
+        surface="admin"
         as="h1"
         title="Edit Category"
         subtitle={category.name}

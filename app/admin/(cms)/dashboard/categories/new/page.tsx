@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { PageHeader } from "@/components/admin/PageHeader";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { CategoryForm } from "@/components/admin/CategoryForm";
 import { getCategoryTree } from "@/lib/queries/categories";
 
@@ -18,6 +18,7 @@ export default async function NewCategoryPage({
   return (
     <>
       <PageHeader
+        surface="admin"
         as="h1"
         title="Add Category"
         subtitle="Create a new category"

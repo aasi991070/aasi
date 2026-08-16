@@ -5,9 +5,9 @@ Branch: remediation · Started: 16 Aug 2026
 ## Git push cadence
 
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
-- **Last push after prompt:** 13-accessibility
-- **Prompts since last push:** 0
-- **Next push after prompt:** 18a-category-query-and-pagination (after 14, 15, 16, 17, 18a)
+- **Last push after prompt:** 13-accessibility (attempt failed — GitHub 403 as `alwiarif46`)
+- **Prompts since last push:** 1 (14-dead-code)
+- **Next push after prompt:** 18a-category-query-and-pagination (after 15, 16, 17, 18a)
 
 ## Deploy cadence
 
@@ -64,7 +64,7 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 12b-pdp-gallery-and-selectors — **done**
 - [x] 12c-remaining-storefront-surfaces — **done**
 - [x] 13-accessibility — **done**
-- [ ] 14-dead-code
+- [x] 14-dead-code — **done**
 
 ## Phase 2 — Performance & SEO
 - [ ] 15-restore-isr
@@ -339,6 +339,18 @@ carousel. `SizeSelector` and `ColorSelector` rewritten as radio groups with
 `PageHeader` / `EmptyState` / `LoadingSpinner` gained `surface` prop; search
 results and category filter restyled; `grep v18- components/storefront/` is clean.
 
+`13` — gate green. One `<h1>` per page via `PageHeader as`; ink focus rings on
+`.store-surface`, v18-primary on admin; global `prefers-reduced-motion`; filter
+sheet title + `aria-pressed`; `LiveRegion` + toast announcements; `tests/a11y.spec.ts`
+added (wired in 28a). Supabase migrations still manual — PDPs error until applied.
+
+`14` — gate green. Deleted admin re-exports (`AdminShell`, `AdminSidebar`,
+`AdminTopNav`, `PageHeader`), font-preview scratch scripts, orphaned
+`ProductDetailClient` / `ProductImageGallery`; dropped `next-themes`,
+`framer-motion`, `@eslint/eslintrc`; admin pages import shared `PageHeader`
+with `surface="admin"`; added `knip` + `eslint-plugin-unused-imports`.
+`/` First Load JS unchanged: 109 kB (shared 87.4 kB).
+
 ## Deferred
 
 | Issue | Which prompt should own it |
@@ -360,6 +372,5 @@ results and category filter restyled; `grep v18- components/storefront/` is clea
 | `getRelatedProducts` still makes up to five sequential round trips; it is now cached, not fixed. | 16-query-dedupe |
 | ~~`components/storefront/ProductReviews.tsx` is a storefront component still using `v18-*` classes~~ Restyled in 12a. `StarRating.tsx` still uses `v18-warning` / `v18-border` for star fill — out of 12a scope; 12c or 13 may own it. | 12a-pdp-layout |
 | No admin UI for the moderation queue — reviews can only be approved with SQL. Nothing in the plan appears to add one. | flagged for Arif; 27b-admin-orders is the closest owner |
-| `@eslint/eslintrc` is now an unused devDependency (it existed only for `FlatCompat` in the deleted `eslint.config.mjs`). | 14-dead-code |
 | Every route builds as dynamic (`ƒ`), including `/`. Expected at this stage. | 15-restore-isr |
 | Pre-existing uncommitted work was in the tree at the start of this run — `RemoteImage.tsx`, `ImageUploader.tsx`, `ProductTable.tsx`, `next.config.mjs`, `lib/storage/images.ts` and five storefront components. Committed untouched as its own commit so later diffs stay honest. It looks like partial image-optimisation work. | 11-image-optimisation |

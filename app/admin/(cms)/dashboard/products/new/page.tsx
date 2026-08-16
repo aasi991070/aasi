@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { PageHeader } from "@/components/admin/PageHeader";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { getCategoryTree } from "@/lib/queries/categories";
 
@@ -10,6 +10,7 @@ export default async function NewProductPage() {
   return (
     <>
       <PageHeader
+        surface="admin"
         as="h1"
         title="Add Product"
         subtitle="Create a new product listing"

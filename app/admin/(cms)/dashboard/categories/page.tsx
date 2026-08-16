@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { PageHeader } from "@/components/admin/PageHeader";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { CategoryTreeView } from "@/components/admin/CategoryTreeView";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ export default function AdminCategoriesPage() {
   return (
     <>
       <PageHeader
+        surface="admin"
         as="h1"
         title="Categories"
         subtitle="Manage your 4-level category hierarchy"

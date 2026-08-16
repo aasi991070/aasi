@@ -1,0 +1,24 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "app/**/{page,layout,loading,error,not-found,route,default}.{ts,tsx}",
+    "vitest.config.mts",
+    "tests/**/*.ts"
+  ],
+  "project": [
+    "app/**/*.{ts,tsx}",
+    "components/**/*.{ts,tsx}",
+    "lib/**/*.{ts,tsx}",
+    "hooks/**/*.{ts,tsx}",
+    "constants/**/*.{ts,tsx}",
+    "types/**/*.{ts,tsx}"
+  ],
+  "ignore": ["components/ui/**", "lib/utils.ts"],
+  "ignoreDependencies": ["tailwindcss", "postcss-load-config"],
+  "rules": {
+    "files": "error",
+    "dependencies": "error",
+    "exports": "off",
+    "types": "off"
+  }
+}

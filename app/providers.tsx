@@ -1,7 +1,6 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "next-themes";
 import { useState } from "react";
 import {
   MonochromeProvider,
@@ -41,13 +40,11 @@ export function Providers({
   );
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-      <QueryClientProvider client={queryClient}>
-        <MonochromeProvider initialMonochrome={initialMonochrome}>
-          {children}
-          <AppToaster />
-        </MonochromeProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <MonochromeProvider initialMonochrome={initialMonochrome}>
+        {children}
+        <AppToaster />
+      </MonochromeProvider>
+    </QueryClientProvider>
   );
 }

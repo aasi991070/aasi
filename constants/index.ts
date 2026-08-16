@@ -113,9 +113,6 @@ export interface NavItem {
   section?: string;
 }
 
-/** @deprecated Use NavItem */
-export type AdminNavItem = NavItem;
-
 export const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     section: "Overview",
