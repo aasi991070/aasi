@@ -8,6 +8,7 @@ import {
   MAX_QUERY_LENGTH,
   tokenizeQuery,
 } from "@/lib/utils/searchText";
+import { parseProductRow } from "@/lib/schemas/product";
 import type {
   CategoryFacets,
   CategoryProductsOptions,
@@ -65,27 +66,39 @@ export function mapProductRow(
   row: Record<string, unknown>,
   options?: { storefront?: boolean }
 ): Product {
-  const variants = Array.isArray(row.variants)
-    ? (row.variants as Record<string, unknown>[])
-        .map(mapVariant)
-        .filter((variant) => !options?.storefront || variant.is_enabled)
-    : undefined;
+  const parsed = parseProductRow(row);
+  const variants = parsed.variants
+    ?.map((variant) =>
+      mapVariant(variant as unknown as Record<string, unknown>)
+    )
+    .filter((variant) => !options?.storefront || variant.is_enabled);
 
   return {
-    ...(row as unknown as Product),
-    price: Number(row.price),
-    sale_price: row.sale_price != null ? Number(row.sale_price) : undefined,
-    images: Array.isArray(row.images) ? (row.images as string[]) : [],
-    colors: Array.isArray(row.colors) ? (row.colors as string[]) : [],
-    sizes: Array.isArray(row.sizes) ? (row.sizes as string[]) : [],
-    tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
-    image_alts: Array.isArray(row.image_alts)
-      ? (row.image_alts as string[])
-      : [],
-    meta_title:
-      row.meta_title != null ? String(row.meta_title) : undefined,
-    meta_description:
-      row.meta_description != null ? String(row.meta_description) : undefined,
+    id: parsed.id,
+    name: parsed.name,
+    slug: parsed.slug,
+    description: parsed.description ?? undefined,
+    price: Number(parsed.price),
+    sale_price:
+      parsed.sale_price != null ? Number(parsed.sale_price) : undefined,
+    category_id: parsed.category_id ?? undefined,
+    gender: parsed.gender ?? undefined,
+    sizes: parsed.sizes,
+    colors: parsed.colors,
+    images: parsed.images,
+    thumbnail_url: parsed.thumbnail_url ?? undefined,
+    in_stock: parsed.in_stock,
+    stock_count: parsed.stock_count,
+    is_featured: parsed.is_featured,
+    is_active: parsed.is_active,
+    tags: parsed.tags,
+    meta_title: parsed.meta_title ?? undefined,
+    meta_description: parsed.meta_description ?? undefined,
+    image_alts: parsed.image_alts ?? [],
+    tax_rate: parsed.tax_rate,
+    hsn_code: parsed.hsn_code ?? undefined,
+    created_at: parsed.created_at,
+    updated_at: parsed.updated_at,
     variants,
   };
 }

@@ -19,9 +19,15 @@ export function findLevel1Category(
   if (!categoryId) return undefined;
 
   const byId = new Map(allCategories.map((c) => [c.id, c]));
+  const visited = new Set<string>();
   let current = byId.get(categoryId);
 
   while (current) {
+    if (visited.has(current.id)) {
+      return undefined;
+    }
+    visited.add(current.id);
+
     if (current.level === 1) return current;
     if (!current.parent_id) return current;
     current = byId.get(current.parent_id);
@@ -38,9 +44,15 @@ export function getCategoryBreadcrumbPath(
 
   const byId = new Map(allCategories.map((c) => [c.id, c]));
   const path: Category[] = [];
+  const visited = new Set<string>();
   let current = byId.get(categoryId);
 
   while (current) {
+    if (visited.has(current.id)) {
+      break;
+    }
+    visited.add(current.id);
+
     path.unshift(current);
     if (!current.parent_id) break;
     current = byId.get(current.parent_id);

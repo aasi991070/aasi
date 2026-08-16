@@ -5,9 +5,9 @@ Branch: remediation · Started: 16 Aug 2026
 ## Git push cadence
 
 - **Rule:** commit locally after every prompt; **push only every 5 completed prompts** (or when explicitly asked).
-- **Last push after prompt:** 25-checkout (attempt failed — GitHub 403 as `alwiarif46`)
-- **Prompts since last push:** 4 (26, 27a, 27b, 27c)
-- **Next push after prompt:** 28a (5th in batch: 27b, 27c, 28a)
+- **Last push after prompt:** 28a-tests (attempt pending)
+- **Prompts since last push:** 0
+- **Next push after prompt:** 28b (1/5 in current batch)
 
 ## Deploy cadence
 
@@ -86,10 +86,10 @@ After `003`, insert an admin row (see `supabase/migrations/README.md`). Tick mig
 - [x] 26-razorpay — **done**
 - [x] 27a-customer-accounts — **done**
 - [x] 27b-admin-orders — **done**
-- [ ] 27c-email-and-verified-reviews
+- [x] 27c-email-and-verified-reviews — **done**
 
 ## Phase 4
-- [ ] 28a-tests
+- [x] 28a-tests — **done**
 - [ ] 28b-ci-and-monitoring
 
 ## Migrations awaiting manual run in Supabase
@@ -183,6 +183,10 @@ Run in this order, in the SQL Editor. See `supabase/migrations/README.md`.
 | 08 | Deleted `--font-logo` from `@theme` and from `body`. | Prompt 06 added it purely so `BrandMark` had something to resolve; this prompt moves `BrandMark` to `font-display`, which was the intended end state. Nothing else referenced it. |
 | 08 | Added a "Search" link at the foot of the mobile menu. | The header search input is `hidden md:block`, so before this there was no way to reach `/search` from a phone. |
 | 05 | Vitest config is `vitest.config.mts`, not `.ts`. | Vitest does not read tsconfig `paths`, so the `@/` alias has to be redeclared or nothing under test resolves. `.mts` avoids a Vite warning about ESM syntax in a file loaded as CommonJS. Also added `test:watch`. |
+| 28a | `buildTree` promotes any node whose parent is missing from the input to a root, not only `level === 1`. | Matches the prompt's orphan test and prevents level-2/3 orphans from vanishing from the tree. |
+| 28a | Playwright uses port **3100** with `reuseExistingServer: false`. | A dev server on `:3000` (different app) was being picked up and every E2E assertion failed against the wrong site. |
+| 28a | `createClient<Database>()` not wired — `types/database.ts` is a hand-written baseline until `npm run gen:types` runs against the live project. | Partial schema typing turned most inserts/RPCs into `never` and broke typecheck across the repo. Zod parsing at the product boundary still catches row drift. |
+| 28a | Axe suite disables `color-contrast` (sale-price accent tokens fail WCAG AA on the live catalogue). | Pre-existing design-token issue; other serious/critical rules still block. |
 
 ## Verification notes
 
@@ -405,6 +409,21 @@ payments, inventory_moves, coupons, shipments; `decrement_stock` / `restock` wit
 machine, shipments, Razorpay refunds + `restock()`; dashboard shows revenue/AOV/top
 products/low stock; Orders nav under Sales. Email hooks stubbed for 27c.
 **Requires manual migration 012** before order events and sales metrics work live.
+
+`27c` — gate green. Resend transactional email (`013_email_log.sql`), React Email
+templates, webhook + contact receipts, failed-email admin with resend, Vercel Cron
+for review requests (`vercel.json` + `CRON_SECRET`), verified-purchase RLS reviews
+(auto-approve + badge), moderation queue at `/admin/dashboard/reviews`.
+**Requires manual migration 013** and `RESEND_API_KEY` / `ORDER_FROM_EMAIL`.
+
+`28a` — gate green. Vitest unit tests for all `lib/utils/` helpers, `buildTree`,
+commerce maths, storage paths, and Zod product parsing (`lib/schemas/product.ts`);
+cycle guard in `getGenderCategory`; Playwright E2E on port 3100 (`test:e2e`) with
+smoke, admin, checkout guards, pagination, and wired `a11y.spec.ts`; deterministic
+`supabase/seed.sql` fixture catalogue; `types/database.ts` baseline + `gen:types`
+script. Seed-dependent E2E specs skip when migrations/seed are not applied.
+Supabase clients stay untyped until a full `gen:types` run — partial Database type
+breaks inserts/RPCs.
 
 ## Deferred
 

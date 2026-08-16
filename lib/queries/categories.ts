@@ -43,7 +43,7 @@ export function buildTree(categories: Category[]): Category[] {
   map.forEach((cat) => {
     if (cat.parent_id && map.has(cat.parent_id)) {
       map.get(cat.parent_id)!.children!.push(cat);
-    } else if (!cat.parent_id || cat.level === 1) {
+    } else {
       roots.push(cat);
     }
   });

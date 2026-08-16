@@ -1,4 +1,5 @@
 import { assertOk } from "@/lib/errors";
+import { mapProductRow } from "@/lib/queries/products";
 import { createPublicClient } from "@/lib/supabase/public";
 import { getAllCategories } from "@/lib/queries/categories";
 import {
@@ -15,16 +16,7 @@ import type {
 } from "@/types";
 
 function mapProduct(row: Record<string, unknown>): Product {
-  const base = row as unknown as Product;
-  return {
-    ...base,
-    price: Number(row.price),
-    sale_price: row.sale_price != null ? Number(row.sale_price) : undefined,
-    images: Array.isArray(row.images) ? (row.images as string[]) : [],
-    colors: Array.isArray(row.colors) ? (row.colors as string[]) : [],
-    sizes: Array.isArray(row.sizes) ? (row.sizes as string[]) : [],
-    tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
-  };
+  return mapProductRow(row);
 }
 
 function attachCategory(

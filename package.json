@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "gen:types": "supabase gen types typescript --project-id %SUPABASE_PROJECT_ID% > types/database.ts",
     "db:migrate": "node scripts/apply-supabase-migrations.mjs",
     "knip": "knip"
   },
